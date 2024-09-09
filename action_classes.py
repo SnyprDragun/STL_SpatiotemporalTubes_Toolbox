@@ -1,0 +1,334 @@
+#!/opt/homebrew/bin/python3.11
+'''script for Reach, Avoid and Stay classes'''
+import z3
+import numpy as np
+
+class TASK():
+    def __init__(self, eventually, always, implies):
+        self.eventually = False
+        self.always = False
+        self.implies = False
+
+class REACH(TASK):
+    '''class for reach STL specification'''
+    def __init__(self, main, x1, x2, y1 = None, y2 = None, z1 = None, z2 = None):
+        if x1 is not None and x2 is not None:
+            self.x1 = x1
+            self.x2 = x2
+            self.callable = 1
+        elif x1 is not None and x2 is None:
+            self.callable = 1.5
+
+        if y1 is not None and y2 is not None:
+            self.y1 = y1
+            self.y2 = y2
+            self.callable = 2
+        elif y1 is not None and y2 is None:
+            self.callable = 2.5
+
+        if z1 is not None and z2 is not None:
+            self.z1 = z1
+            self.z2 = z2
+            self.callable = 3
+        elif z1 is not None and z2 is None:
+            self.callable = 3.5
+
+        self.t1 = 0
+        self.t2 = 0
+        self.main = main
+
+        if self.main.getStart() > self.t1:
+            self.main.setStart(self.t1)
+        if self.main.getFinish() < self.t2:
+            self.main.setFinish(self.t2)
+
+    def checkCallableAndCallExecute(self):
+        match self.callable:
+            case 1:
+                return self.execute_reach_1D()
+            case 1.5:
+                print("Error: Must enter both values for X")
+            case 2:
+                return self.execute_reach_2D()
+            case 2.5:
+                print("Error: Must enter both values for Y")
+            case 3:
+                return self.execute_reach_3D()
+            case 3.5:
+                print("Error: Must enter both values for Z")
+            case default:
+                print("Error: Must enter ", 2 * self.main.dimension, "values for degree ", self.main.dimension, 
+                    ". Currently have mismatch.")
+
+    def execute_reach_1D(self):
+        self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                gamma1_L = self.main.gammas(t)[0]
+                gamma1_U = self.main.gammas(t)[1]
+
+                x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                constraint = z3.And(x<self.x2, x>self.x1)
+                all_constraints.append(constraint)
+        print("Added Reach Constraints: ", self.main.setpoints)
+        return all_constraints
+
+    def execute_reach_2D(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    gamma1_L = self.main.gammas(t)[0]
+                    gamma2_L = self.main.gammas(t)[1]
+                    gamma1_U = self.main.gammas(t)[2]
+                    gamma2_U = self.main.gammas(t)[3]
+
+                    x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                    y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                    constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
+                    all_constraints.append(constraint)
+        print("Added Reach Constraints: ", self.main.setpoints)
+        return all_constraints
+
+    def execute_reach_3D(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    for lambda_3 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma3_L = self.main.gammas(t)[2]
+                        gamma1_U = self.main.gammas(t)[3]
+                        gamma2_U = self.main.gammas(t)[4]
+                        gamma3_U = self.main.gammas(t)[5]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
+                        constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
+                        all_constraints.append(constraint)
+        print("Added Reach Constraints: ", self.main.setpoints)
+        return all_constraints
+
+
+class AVOID(TASK):
+    '''class for avoid STL specification'''
+    def __init__(self, main, x1, x2, y1 = None, y2 = None, z1 = None, z2 = None):
+        if x1 is not None and x2 is not None:
+            self.x1 = x1
+            self.x2 = x2
+            self.callable = 1
+        elif x1 is not None and x2 is None:
+            self.callable = 1.5
+
+        if y1 is not None and y2 is not None:
+            self.y1 = y1
+            self.y2 = y2
+            self.callable = 2
+        elif y1 is not None and y2 is None:
+            self.callable = 2.5
+
+        if z1 is not None and z2 is not None:
+            self.z1 = z1
+            self.z2 = z2
+            self.callable = 3
+        elif z1 is not None and z2 is None:
+            self.callable = 3.5
+
+        self.t1 = 0
+        self.t2 = 0
+        self.main = main
+
+        if self.main.getStart() > self.t1:
+            self.main.setStart(self.t1)
+        if self.main.getFinish() < self.t2:
+            self.main.setFinish(self.t2)
+
+    def checkCallableAndCallExecute(self):
+        match self.callable:
+            case 1:
+                return self.execute_avoid_1D()
+            case 1.5:
+                print("Error: Must enter both values for X")
+            case 2:
+                return self.execute_avoid_2D()
+            case 2.5:
+                print("Error: Must enter both values for Y")
+            case 3:
+                return self.execute_avoid_3D()
+            case 3.5:
+                print("Error: Must enter both values for Z")
+            case default:
+                print("Error: Must enter proper values")
+
+    def execute_avoid_1D(self):
+        self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                gamma1_L = self.main.gammas(t)[0]
+                gamma1_U = self.main.gammas(t)[1]
+
+                x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                constraint = z3.Or(x>self.x2, x<self.x1)
+                all_constraints.append(constraint)
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        return all_constraints
+
+    def execute_avoid_2D(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma1_U = self.main.gammas(t)[2]
+                        gamma2_U = self.main.gammas(t)[3]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1))
+                        all_constraints.append(constraint)
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        return all_constraints
+
+    def execute_avoid_3D(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    for lambda_3 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma3_L = self.main.gammas(t)[2]
+                        gamma1_U = self.main.gammas(t)[3]
+                        gamma2_U = self.main.gammas(t)[4]
+                        gamma3_U = self.main.gammas(t)[5]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
+                        constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1), z3.Or(z>self.z2, z<self.z1))
+                        all_constraints.append(constraint)
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        return all_constraints
+
+
+class STAY(TASK):
+    '''class for stay STL specification'''
+    def __init__(self, main, x1, x2, y1 = None, y2 = None, z1 = None, z2 = None):
+        if x1 is not None and x2 is not None:
+            self.x1 = x1
+            self.x2 = x2
+            self.callable = 1
+        elif x1 is not None and x2 is None:
+            self.callable = 1.5
+
+        if y1 is not None and y2 is not None:
+            self.y1 = y1
+            self.y2 = y2
+            self.callable = 2
+        elif y1 is not None and y2 is None:
+            self.callable = 2.5
+
+        if z1 is not None and z2 is not None:
+            self.z1 = z1
+            self.z2 = z2
+            self.callable = 3
+        elif z1 is not None and z2 is None:
+            self.callable = 3.5
+
+        self.t1 = 0
+        self.t2 = 0
+        self.main = main
+
+        if self.main.getStart() > self.t1:
+            self.main.setStart(self.t1)
+        if self.main.getFinish() < self.t2:
+            self.main.setFinish(self.t2)
+
+    def checkCallableAndCallExecute(self):
+        match self.callable:
+            case 1:
+                return self.execute_stay_1D()
+            case 1.5:
+                print("Error: Must enter both values for X")
+            case 2:
+                return self.execute_stay_2D()
+            case 2.5:
+                print("Error: Must enter both values for Y")
+            case 3:
+                return self.execute_stay_3D()
+            case 3.5:
+                print("Error: Must enter both values for Z")
+            case default:
+                print("Error: Must enter proper values")
+
+    def execute_stay_1D(self):
+        self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                gamma1_L = self.main.gammas(t)[0]
+                gamma1_U = self.main.gammas(t)[1]
+
+                x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                constraint = z3.And(x<self.x2, x>self.x1)
+                all_constraints.append(constraint)
+        print("Added Stay Constraints: ", self.main.setpoints)
+        return all_constraints
+
+    def execute_stay_2D(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    gamma1_L = self.main.gammas(t)[0]
+                    gamma2_L = self.main.gammas(t)[1]
+                    gamma1_U = self.main.gammas(t)[2]
+                    gamma2_U = self.main.gammas(t)[3]
+
+                    x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                    y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                    constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
+                    all_constraints.append(constraint)
+        print("Added Stay Constraints: ", self.main.setpoints)
+        return all_constraints
+
+    def execute_stay_3D(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    for lambda_3 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma3_L = self.main.gammas(t)[2]
+                        gamma1_U = self.main.gammas(t)[3]
+                        gamma2_U = self.main.gammas(t)[4]
+                        gamma3_U = self.main.gammas(t)[5]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
+                        constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
+                        all_constraints.append(constraint)
+        print("Added Stay Constraints: ", self.main.setpoints)
+        return all_constraints
