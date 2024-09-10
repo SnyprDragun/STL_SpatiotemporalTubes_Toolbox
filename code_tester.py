@@ -283,39 +283,146 @@
 # print(random.randint(0,3))
 
 
-class A:
-    _instances = {}  # Registry for storing instances
+# class A:
+#     _instances = {}  # Registry for storing instances
 
-    def __init__(self, identifier, num):
-        # Store num and register the instance
-        self.num = num
-        A._instances[identifier] = self
+#     def __init__(self, identifier, num):
+#         # Store num and register the instance
+#         self.num = num
+#         A._instances[identifier] = self
 
-    @classmethod
-    def get_instance(cls, identifier):
-        # Fetch the instance from the registry by identifier
-        return cls._instances.get(identifier)
+#     @classmethod
+#     def get_instance(cls, identifier):
+#         # Fetch the instance from the registry by identifier
+#         return cls._instances.get(identifier)
 
 
-class B:
-    def __init__(self, identifier):
-        # Automatically get the appropriate instance of A by identifier
-        self.main = A.get_instance(identifier)
-        if self.main:
-            print(self.main.num)
+# class B:
+#     def __init__(self, identifier):
+#         # Automatically get the appropriate instance of A by identifier
+#         self.main = A.get_instance(identifier)
+#         if self.main:
+#             print(self.main.num)
+#         else:
+#             print(f"No instance of A found for identifier '{identifier}'")
+
+# class C(B):
+#     def __init__(self, identifier):
+#         # Call the parent constructor with the identifier
+#         super().__init__(identifier)
+#         print(self.main.num)
+
+# # Create multiple instances of A with different identifiers
+# A('a1', 3)
+# A('a2', 5)
+
+# # Create objects of B and C using the identifiers without passing A instances
+# obj1 = C('a1')  # This will print 3
+# obj2 = C('a2')  # This will print 5 twice
+
+# import torch
+# import z3
+# import time
+
+# start = time.time()
+# x1 = 0
+# x2 = 1
+
+# def gammas(self, t_values):
+#     ''' Vectorized version for computing tube equations, keeping symbolic coefficients '''
+#     num_t_values = len(t_values)
+    
+#     # Prepare the tubes array to hold symbolic expressions
+#     tubes = [[z3.Real(f'e_{i}_{j}') for j in range(num_t_values)] for i in range(2 * 3)]
+    
+#     # Compute powers of t_values using Torch for parallelism
+#     powers = torch.stack([t_values ** i for i in range(2 + 1)], dim=-1)  # Shape: (len(t_values), degree+1)
+    
+#     # Now iterate over dimensions and construct symbolic tubes with Z3
+#     for i in range(2 * 3):
+#         for j in range(num_t_values):
+#             tubes[i][j] = 0
+#             for k in range(2 + 1):
+#                 tubes[i][j] += self.C[k + i * (2 + 1)] * powers[j, k].item()  # `.item()` extracts the value from the tensor
+            
+#     return tubes
+
+# # Create torch tensors for t_values and lambda_values
+# t_values = torch.linspace(0, 1, steps=11)
+# lambda_values = torch.linspace(0, 1, steps=11)
+
+# # Call the gammas function with t_values
+# gammas_at_all_t = gammas(t_values)
+
+# all_constraints = []
+# for i, t in enumerate(t_values):
+#     gamma1_L, gamma1_U = gammas_at_all_t[0][i], gammas_at_all_t[1][i]  # Extract symbolic gammas for each t
+    
+#     # Compute constraints as symbolic Z3 expressions
+#     for lambda_1 in lambda_values:
+#         x = lambda_1.item() * gamma1_L + (1 - lambda_1.item()) * gamma1_U
+#         constraint = z3.And(x < x2, x > x1)
+#         all_constraints.append(constraint)
+
+# print("Time: ", time.time() - start)
+
+
+import z3
+
+def find_common_solution(*solvers):
+    models = []
+    
+    # Solve each solver and get its model
+    for solver in solvers:
+        if solver.check() == z3.sat:
+            model = solver.model()
+            models.append(model)
         else:
-            print(f"No instance of A found for identifier '{identifier}'")
+            print("One of the solvers is unsatisfiable")
+            return None  # If one is unsatisfiable, there is no common solution
+    
+    if not models:
+        print("No models found")
+        return None
 
-class C(B):
-    def __init__(self, identifier):
-        # Call the parent constructor with the identifier
-        super().__init__(identifier)
-        print(self.main.num)
+    # Create a dictionary to store the common values of the variables
+    common_values = {}
+    
+    # Get variables from the first model
+    for v in models[0]:
+        # Extract the value from the model and store it
+        common_values[v] = models[0][v].as_long()
+    
+    # Compare with subsequent models
+    for model in models[1:]:
+        for v in common_values:
+            # Extract the value from the current model
+            value = model[v].as_long()
+            # Compare values
+            if common_values[v] != value:
+                print("No common solution found among models")
+                return None
+    
+    return common_values
 
-# Create multiple instances of A with different identifiers
-A('a1', 3)
-A('a2', 5)
+# Usage example:
+# Define some Z3 solvers
+solver1 = z3.Solver()
+solver2 = z3.Solver()
 
-# Create objects of B and C using the identifiers without passing A instances
-obj1 = C('a1')  # This will print 3
-obj2 = C('a2')  # This will print 5 twice
+# Define some Z3 variables
+x = z3.Int('x')
+y = z3.Int('y')
+
+# Add constraints to the solvers
+solver1.add(x > 5, y == 10)
+solver2.add(x < 10, y == 10)
+
+# Find common solution
+common_solution = find_common_solution(solver1, solver2)
+
+# Print the solution if it exists
+if common_solution:
+    print("Common solution:", common_solution)
+else:
+    print("No common solution")

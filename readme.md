@@ -20,8 +20,14 @@ Tube Thickness Lower Limit - 0.5
            ii. y vs t
           iii. x vs y
            iv. x vs y vs t
+3D Output - i. x vs t
+           ii. y vs t
+          iii. z vs t
 
 Decomposition:
               i. Obstacle must have integer level discretization
              ii. 
             iii. 
+
+Multiagent:
+              i. Identifier must be mentioned for each STL instance

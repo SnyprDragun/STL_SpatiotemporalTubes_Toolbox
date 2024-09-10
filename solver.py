@@ -4,7 +4,7 @@ import z3
 import numpy as np
 
 class SOLVER():
-    def __init__(self, degree, dimension):
+    def __init__(self, degree = None, dimension = None):
         self.degree = degree
         self.dimension = dimension
         self.solver = z3.Solver()
@@ -58,3 +58,7 @@ class SOLVER():
                 second_decimal_of_b = z3.ToInt((b * 10000) / 100) % 10
                 self.solver.add(second_decimal_of_a != second_decimal_of_b)
         print("All Solutions: ", all_solutions)
+        return all_solutions
+
+    def commonSolution(self, *solvers):
+        pass

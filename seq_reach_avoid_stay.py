@@ -5,6 +5,8 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+
+from solver import *
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class SeqReachAvoidStay():
@@ -25,6 +27,10 @@ class SeqReachAvoidStay():
         self.degree = degree
         self.dimension = dimension
         self.solver = z3.Solver()
+
+        self.reach_solver = SOLVER(2, 3)
+        self.avoid_solver = SOLVER(2, 3)
+
         z3.set_param("parallel.enable", True)
         self.C = [z3.Real(f'C{i}') for i in range((2 * self.dimension) * (self.degree + 1))]
 
@@ -253,6 +259,9 @@ class SeqReachAvoidStay():
             print("No solution found.")
             end = time.time()
             self.displayTime(start, end)
+
+    def parallel_solvers(self):
+        SOLVER.commonSolution(self.reach_solver.solver, self.avoid_solver.solver)
 
     def test_plot(self):
         '''method to plot the tubes'''

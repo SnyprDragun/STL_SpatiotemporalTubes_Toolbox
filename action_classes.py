@@ -1,17 +1,20 @@
 #!/opt/homebrew/bin/python3.11
 '''script for Reach, Avoid and Stay classes'''
 import z3
+import time
 import numpy as np
 
 class TASK():
-    def __init__(self, eventually, always, implies):
+    def __init__(self):
         self.eventually = False
         self.always = False
         self.implies = False
+        self.start = time.time()
 
 class REACH(TASK):
     '''class for reach STL specification'''
     def __init__(self, main, x1, x2, y1 = None, y2 = None, z1 = None, z2 = None):
+        super().__init__()
         if x1 is not None and x2 is not None:
             self.x1 = x1
             self.x2 = x2
@@ -73,6 +76,8 @@ class REACH(TASK):
                 constraint = z3.And(x<self.x2, x>self.x1)
                 all_constraints.append(constraint)
         print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
 
     def execute_reach_2D(self):
@@ -92,6 +97,8 @@ class REACH(TASK):
                     constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
                     all_constraints.append(constraint)
         print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
 
     def execute_reach_3D(self):
@@ -115,6 +122,8 @@ class REACH(TASK):
                         constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
                         all_constraints.append(constraint)
         print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
 
 
@@ -181,6 +190,8 @@ class AVOID(TASK):
                 constraint = z3.Or(x>self.x2, x<self.x1)
                 all_constraints.append(constraint)
         print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
 
     def execute_avoid_2D(self):
@@ -200,6 +211,8 @@ class AVOID(TASK):
                         constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1))
                         all_constraints.append(constraint)
         print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
 
     def execute_avoid_3D(self):
@@ -223,6 +236,8 @@ class AVOID(TASK):
                         constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1), z3.Or(z>self.z2, z<self.z1))
                         all_constraints.append(constraint)
         print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
 
 
@@ -289,6 +304,8 @@ class STAY(TASK):
                 constraint = z3.And(x<self.x2, x>self.x1)
                 all_constraints.append(constraint)
         print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
 
     def execute_stay_2D(self):
@@ -308,6 +325,8 @@ class STAY(TASK):
                     constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
                     all_constraints.append(constraint)
         print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
 
     def execute_stay_3D(self):
@@ -331,4 +350,6 @@ class STAY(TASK):
                         constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
                         all_constraints.append(constraint)
         print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
         return all_constraints
