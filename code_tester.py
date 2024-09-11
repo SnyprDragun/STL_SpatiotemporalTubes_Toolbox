@@ -367,62 +367,513 @@
 # print("Time: ", time.time() - start)
 
 
-import z3
+# import z3
 
-def find_common_solution(*solvers):
-    models = []
+# def find_common_solution(*solvers):
+#     models = []
     
-    # Solve each solver and get its model
-    for solver in solvers:
-        if solver.check() == z3.sat:
-            model = solver.model()
-            models.append(model)
+#     # Solve each solver and get its model
+#     for solver in solvers:
+#         if solver.check() == z3.sat:
+#             model = solver.model()
+#             models.append(model)
+#         else:
+#             print("One of the solvers is unsatisfiable")
+#             return None  # If one is unsatisfiable, there is no common solution
+    
+#     if not models:
+#         print("No models found")
+#         return None
+
+#     # Create a dictionary to store the common values of the variables
+#     common_values = {}
+    
+#     # Get variables from the first model
+#     for v in models[0]:
+#         # Extract the value from the model and store it
+#         common_values[v] = models[0][v].as_long()
+    
+#     # Compare with subsequent models
+#     for model in models[1:]:
+#         for v in common_values:
+#             # Extract the value from the current model
+#             value = model[v].as_long()
+#             # Compare values
+#             if common_values[v] != value:
+#                 print("No common solution found among models")
+#                 return None
+    
+#     return common_values
+
+# # Usage example:
+# # Define some Z3 solvers
+# solver1 = z3.Solver()
+# solver2 = z3.Solver()
+
+# # Define some Z3 variables
+# x = z3.Int('x')
+# y = z3.Int('y')
+
+# # Add constraints to the solvers
+# solver1.add(x > 5, y == 10)
+# solver2.add(x < 10, y == 10)
+
+# # Find common solution
+# common_solution = find_common_solution(solver1, solver2)
+
+# # Print the solution if it exists
+# if common_solution:
+#     print("Common solution:", common_solution)
+# else:
+#     print("No common solution")
+
+
+# class STL:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+# class REACH:
+#     def __init__(self, stl, target):
+#         self.stl = stl
+#         self.target = target
+    
+#     def call(self):
+#         return f"REACH({self.target})"
+
+# class AVOID:
+#     def __init__(self, stl, obstacle):
+#         self.stl = stl
+#         self.obstacle = obstacle
+    
+#     def call(self):
+#         return f"AVOID({self.obstacle})"
+
+# class EVENTUALLY:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+#     def call(self):
+#         return f"EVENTUALLY({self.operation})"
+
+# class ALWAYS:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+#     def call(self):
+#         return f"ALWAYS({self.operation})"
+
+# class AND:
+#     def __init__(self, level, *operations):
+#         self.level = level
+#         self.operations = operations
+    
+#     def call(self):
+#         return f"AND({', '.join(self.operations)})"
+
+# class OR:
+#     def __init__(self, level, *operations):
+#         self.level = level
+#         self.operations = operations
+    
+#     def call(self):
+#         return f"OR({', '.join(self.operations)})"
+
+# def transform_formula(T1, T2, O1, O2):
+#     # Create an STL object instance with SeqReachAvoidStay
+#     stl = STL(1, "SeqReachAvoidStay")
+    
+#     # Build the semantic representation step by step
+#     eventually_T1 = EVENTUALLY(1, REACH(stl, T1).call()).call()
+#     eventually_T2 = EVENTUALLY(1, REACH(stl, T2).call()).call()
+#     avoid_O1 = ALWAYS(1, AVOID(stl, O1).call()).call()
+#     avoid_O2 = ALWAYS(1, AVOID(stl, O2).call()).call()
+    
+#     # Combine using OR for the targets and AND for the overall formula
+#     or_targets = OR(1, eventually_T1, eventually_T2).call()
+#     and_obstacles = AND(1, avoid_O1, avoid_O2).call()
+    
+#     # Final formula using AND
+#     formula = AND(1, or_targets, and_obstacles).call()
+    
+#     return formula
+
+# # Example usage
+# T1 = "T1"
+# T2 = "T2"
+# O1 = "O1"
+# O2 = "O2"
+
+# result = transform_formula(T1, T2, O1, O2)
+# print(result)
+
+
+# import re
+
+# class STL:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+
+# class REACH:
+#     def __init__(self, stl, target):
+#         self.stl = stl
+#         self.target = target
+    
+#     def call(self):
+#         return f"REACH({self.target})"
+
+# class AVOID:
+#     def __init__(self, stl, obstacle):
+#         self.stl = stl
+#         self.obstacle = obstacle
+    
+#     def call(self):
+#         return f"AVOID({self.obstacle})"
+
+# class EVENTUALLY:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+#     def call(self):
+#         return f"EVENTUALLY({self.operation})"
+
+# class ALWAYS:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+#     def call(self):
+#         return f"ALWAYS({self.operation})"
+
+# class AND:
+#     def __init__(self, level, *operations):
+#         self.level = level
+#         self.operations = operations
+    
+#     def call(self):
+#         return f"AND({', '.join(self.operations)})"
+
+# class OR:
+#     def __init__(self, level, *operations):
+#         self.level = level
+#         self.operations = operations
+    
+#     def call(self):
+#         return f"OR({', '.join(self.operations)})"
+
+# # Map LTL symbols to STL functions
+# ltl_to_stl_mapping = {
+#     '◊': EVENTUALLY,
+#     '□': ALWAYS,
+#     '∧': AND,
+#     '∨': OR,
+#     '¬': AVOID  # Negation treated as avoiding the obstacle
+# }
+
+# # Parsing the formula and dynamically building the STL expression
+# def parse_formula(stl, formula):
+#     tokens = re.split(r'(\s|◊|□|∧|∨|¬|\(|\))', formula)
+#     tokens = [token for token in tokens if token.strip()]  # Remove empty tokens
+    
+#     stack = []
+    
+#     for token in tokens:
+#         if token == '(':
+#             stack.append(token)  # Push '(' onto the stack
+#         elif token in ('T1', 'T2'):
+#             stack.append(REACH(stl, token).call())
+#         elif token in ('O1', 'O2'):
+#             stack.append(AVOID(stl, token).call())
+#         elif token in ltl_to_stl_mapping:
+#             stack.append(token)  # Push operator
+#         elif token == ')':
+#             # Pop the expression to evaluate, applying the STL operator
+#             args = []
+#             while stack and stack[-1] != '(':
+#                 args.insert(0, stack.pop())
+#             if stack and stack[-1] == '(':
+#                 stack.pop()  # Remove '('
+            
+#             if len(stack) > 0 and stack[-1] in ltl_to_stl_mapping:
+#                 operator = stack.pop()  # Get operator
+#                 if operator == '¬':  # Negation only applies to one operand
+#                     stl_operator = ltl_to_stl_mapping[operator](stl, args[0]).call()
+#                 else:
+#                     stl_operator = ltl_to_stl_mapping[operator](1, *args).call()
+#                 stack.append(stl_operator)
+#             else:
+#                 raise ValueError("Mismatched parentheses or missing operator.")
+#         else:
+#             raise ValueError(f"Unexpected token: {token}")
+    
+#     if len(stack) != 1:
+#         raise ValueError("Formula parsing error: incomplete or invalid formula.")
+    
+#     return stack[0]
+
+# # General function to convert LTL formula to STL
+# def transform_formula(stl, formula):
+#     return parse_formula(stl, formula)
+
+# # Example usage
+# stl = STL(1, "SeqReachAvoidStay")
+# formula = "(◊ T1 ∨ ◊ T2) ∧ (□ ¬(O1 ∧ O2))"  # Input formula
+# semantic = transform_formula(stl, formula)
+# print(semantic)
+
+
+# import re
+
+# class STL:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+
+# class REACH:
+#     def __init__(self, stl, target):
+#         self.stl = stl
+#         self.target = target
+    
+#     def call(self):
+#         return f"REACH({self.target})"
+
+# class AVOID:
+#     def __init__(self, stl, obstacle):
+#         self.stl = stl
+#         self.obstacle = obstacle
+    
+#     def call(self):
+#         return f"AVOID({self.obstacle})"
+
+# class EVENTUALLY:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+#     def call(self):
+#         return f"EVENTUALLY({self.operation})"
+
+# class ALWAYS:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+#     def call(self):
+#         return f"ALWAYS({self.operation})"
+
+# class AND:
+#     def __init__(self, level, *operations):
+#         self.level = level
+#         self.operations = operations
+    
+#     def call(self):
+#         return f"AND({', '.join(self.operations)})"
+
+# class OR:
+#     def __init__(self, level, *operations):
+#         self.level = level
+#         self.operations = operations
+    
+#     def call(self):
+#         return f"OR({', '.join(self.operations)})"
+
+# # Map LTL symbols to STL functions
+# ltl_to_stl_mapping = {
+#     '◊': EVENTUALLY,
+#     '□': ALWAYS,
+#     '∧': AND,
+#     '∨': OR,
+#     '¬': AVOID  # Negation for avoid
+# }
+
+# # Parsing the formula and dynamically building the STL expression
+# def parse_formula(stl, formula):
+#     tokens = re.split(r'(\s|◊|□|∧|∨|¬|\(|\))', formula)
+#     tokens = [token for token in tokens if token.strip()]  # Remove empty tokens
+    
+#     stack = []
+    
+#     for token in tokens:
+#         if token == '(':
+#             stack.append(token)  # Push '(' onto the stack
+#         elif token in ('T1', 'T2'):
+#             stack.append(REACH(stl, token).call())
+#         elif token in ('O1', 'O2'):
+#             stack.append(AVOID(stl, token).call())
+#         elif token in ltl_to_stl_mapping:
+#             stack.append(token)  # Push operator
+#         elif token == ')':
+#             # Pop the expression to evaluate, applying the STL operator
+#             args = []
+#             while stack and stack[-1] != '(':
+#                 args.insert(0, stack.pop())
+#             if stack and stack[-1] == '(':
+#                 stack.pop()  # Remove '('
+            
+#             if len(stack) > 0 and stack[-1] in ltl_to_stl_mapping:
+#                 operator = stack.pop()  # Get operator
+#                 if operator == '¬':  # Negation only applies to one operand
+#                     stl_operator = ltl_to_stl_mapping[operator](stl, args[0]).call()
+#                 else:
+#                     stl_operator = ltl_to_stl_mapping[operator](1, *args).call()
+#                 stack.append(stl_operator)
+#             else:
+#                 raise ValueError("Mismatched parentheses or missing operator.")
+#         else:
+#             raise ValueError(f"Unexpected token: {token}")
+    
+#     if len(stack) != 1:
+#         raise ValueError("Formula parsing error: incomplete or invalid formula.")
+    
+#     return stack[0]
+
+# # General function to convert LTL formula to STL
+# def transform_formula(stl, formula):
+#     open_parens = formula.count('(')
+#     close_parens = formula.count(')')
+    
+#     # Check if parentheses are balanced
+#     if open_parens != close_parens:
+#         raise ValueError(f"Unbalanced parentheses: {open_parens} opening and {close_parens} closing.")
+    
+#     return parse_formula(stl, formula)
+
+# # Example usage
+# stl = STL(1, "SeqReachAvoidStay")
+# formula = "(◊ T1 ∨ ◊ T2) ∧ (□ ¬(O1 ∧ O2))"  # Input formula
+# semantic = transform_formula(stl, formula)
+# print(semantic)
+
+
+import re
+
+class STL:
+    def __init__(self, level, operation):
+        self.level = level
+        self.operation = operation
+
+class REACH:
+    def __init__(self, stl, target):
+        self.stl = stl
+        self.target = target
+    
+    def call(self):
+        return f"REACH({self.target})"
+
+class AVOID:
+    def __init__(self, stl, obstacle):
+        self.stl = stl
+        self.obstacle = obstacle
+    
+    def call(self):
+        return f"AVOID({self.obstacle})"
+
+class EVENTUALLY:
+    def __init__(self, level, operation):
+        self.level = level
+        self.operation = operation
+    
+    def call(self):
+        return f"EVENTUALLY({self.operation})"
+
+class ALWAYS:
+    def __init__(self, level, operation):
+        self.level = level
+        self.operation = operation
+    
+    def call(self):
+        return f"ALWAYS({self.operation})"
+
+class AND:
+    def __init__(self, level, left, right):
+        self.level = level
+        self.left = left
+        self.right = right
+    
+    def call(self):
+        return f"AND({self.left}, {self.right})"
+
+class OR:
+    def __init__(self, level, left, right):
+        self.level = level
+        self.left = left
+        self.right = right
+    
+    def call(self):
+        return f"OR({self.left}, {self.right})"
+
+# Map LTL symbols to STL functions
+ltl_to_stl_mapping = {
+    '◊': EVENTUALLY,
+    '□': ALWAYS,
+    '∧': AND,
+    '∨': OR,
+    '¬': AVOID  # Negation treated as avoiding the obstacle
+}
+
+# Improved tokenization function
+def tokenize(formula):
+    # Split formula by operators, parentheses, and atomic propositions
+    tokens = re.findall(r'(\w+|[◊□¬∧∨()])', formula)
+    return tokens
+
+# Parsing the formula and dynamically building the STL expression
+def parse_formula(stl, formula):
+    tokens = tokenize(formula)
+    
+    stack = []
+    operator_stack = []
+    
+    for token in tokens:
+        if token in ('T1', 'T2'):
+            stack.append(REACH(stl, token).call())
+        elif token in ('O1', 'O2'):
+            stack.append(AVOID(stl, token).call())
+        elif token in ltl_to_stl_mapping:
+            operator_stack.append(token)  # Push operator
+        elif token == '(':
+            operator_stack.append(token)  # Push '('
+        elif token == ')':
+            # Apply operators until '('
+            while operator_stack and operator_stack[-1] != '(':
+                operator = operator_stack.pop()
+                if operator == '¬':
+                    operand = stack.pop()
+                    stack.append(ltl_to_stl_mapping[operator](stl, operand).call())
+                else:
+                    right = stack.pop()
+                    left = stack.pop()
+                    stack.append(ltl_to_stl_mapping[operator](1, left, right).call())
+            operator_stack.pop()  # Pop '('
         else:
-            print("One of the solvers is unsatisfiable")
-            return None  # If one is unsatisfiable, there is no common solution
+            raise ValueError(f"Unexpected token: {token}")
+
+    # If any operators are left after the loop
+    while operator_stack:
+        operator = operator_stack.pop()
+        if operator == '¬':
+            operand = stack.pop()
+            stack.append(ltl_to_stl_mapping[operator](stl, operand).call())
+        else:
+            right = stack.pop()
+            left = stack.pop()
+            stack.append(ltl_to_stl_mapping[operator](1, left, right).call())
+
+    if len(stack) != 1:
+        raise ValueError("Formula parsing error: incomplete or invalid formula.")
     
-    if not models:
-        print("No models found")
-        return None
+    return stack[0]
 
-    # Create a dictionary to store the common values of the variables
-    common_values = {}
-    
-    # Get variables from the first model
-    for v in models[0]:
-        # Extract the value from the model and store it
-        common_values[v] = models[0][v].as_long()
-    
-    # Compare with subsequent models
-    for model in models[1:]:
-        for v in common_values:
-            # Extract the value from the current model
-            value = model[v].as_long()
-            # Compare values
-            if common_values[v] != value:
-                print("No common solution found among models")
-                return None
-    
-    return common_values
+# General function to convert LTL formula to STL
+def transform_formula(stl, formula):
+    return parse_formula(stl, formula)
 
-# Usage example:
-# Define some Z3 solvers
-solver1 = z3.Solver()
-solver2 = z3.Solver()
-
-# Define some Z3 variables
-x = z3.Int('x')
-y = z3.Int('y')
-
-# Add constraints to the solvers
-solver1.add(x > 5, y == 10)
-solver2.add(x < 10, y == 10)
-
-# Find common solution
-common_solution = find_common_solution(solver1, solver2)
-
-# Print the solution if it exists
-if common_solution:
-    print("Common solution:", common_solution)
-else:
-    print("No common solution")
+# Example usage
+stl = STL(1, "SeqReachAvoidStay")
+formula = "(◊ T1 ∨ ◊ T2) ∧ (□ ¬(O1 ∧ O2))"  # Input formula
+semantic = transform_formula(stl, formula)
+print(semantic)

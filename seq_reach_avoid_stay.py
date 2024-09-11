@@ -64,14 +64,17 @@ class SeqReachAvoidStay():
             if self.dimension == 1:
                 gamma1_L = self.gammas(t)[0]
                 gamma1_U = self.gammas(t)[1]
-                self.solver.add(z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness))
+                constraint_x = z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness)
+                self.solver.add(constraint_x)
             if self.dimension == 2:
                 gamma1_L = self.gammas(t)[0]
                 gamma2_L = self.gammas(t)[1]
                 gamma1_U = self.gammas(t)[2]
                 gamma2_U = self.gammas(t)[3]
-                self.solver.add(z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness))
-                self.solver.add(z3.And((gamma2_U - gamma2_L) > 0.5, (gamma2_U - gamma2_L) < self.tube_thickness))
+                constraint_x = z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness)
+                constraint_y = z3.And((gamma2_U - gamma2_L) > 0.5, (gamma2_U - gamma2_L) < self.tube_thickness)
+                self.solver.add(constraint_x)
+                self.solver.add(constraint_y)
             if self.dimension == 3:
                 gamma1_L = self.gammas(t)[0]
                 gamma2_L = self.gammas(t)[1]
@@ -79,9 +82,12 @@ class SeqReachAvoidStay():
                 gamma1_U = self.gammas(t)[3]
                 gamma2_U = self.gammas(t)[4]
                 gamma3_U = self.gammas(t)[5]
-                self.solver.add(z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness))
-                self.solver.add(z3.And((gamma2_U - gamma2_L) > 0.5, (gamma2_U - gamma2_L) < self.tube_thickness))
-                self.solver.add(z3.And((gamma3_U - gamma3_L) > 0.5, (gamma3_U - gamma3_L) < self.tube_thickness))
+                constraint_x = z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness)
+                constraint_y = z3.And((gamma2_U - gamma2_L) > 0.5, (gamma2_U - gamma2_L) < self.tube_thickness)
+                constraint_z = z3.And((gamma3_U - gamma3_L) > 0.5, (gamma3_U - gamma3_L) < self.tube_thickness)
+                self.solver.add(constraint_x)
+                self.solver.add(constraint_y)
+                self.solver.add(constraint_z)
 
     def plot_for_1D(self, C_fin):
         x_u = np.zeros(self.getRange())
