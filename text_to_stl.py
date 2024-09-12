@@ -5,6 +5,7 @@ from solver import *
 from stl_main import *
 from action_classes import *
 from error_handling import *
+from collections import Counter
 from seq_reach_avoid_stay import *
 
 class TextToSTL():
@@ -19,28 +20,61 @@ class TextToSTL():
     def __init__(self, text):
         self.text = text
 
-    def tokenize(self, formula):
-        '''Split formula by operators, parentheses, and atomic propositions'''
-        tokens = re.findall(r'(\w+|[◊□¬∧∨()])', formula)
+    def tokenize(self):
+        '''Split text by operators, parentheses, and atomic propositions'''
+        tokens = re.findall(r'(\w+|[◊□¬∧∨()])', self.text)
         return tokens
 
-    def parse_formula(self, stl, formula):
-        tokens = self.tokenize(formula)
-        
+    def tokenCount(self, tokens):
+        element_counts = dict(Counter(tokens))
+        distinct_count = len(element_counts)
+        print(f"Total number of distinct elements: {distinct_count}")
+        print("Count of each distinct element:")
+        for element, count in element_counts.items():
+            print(f"{element}: {count}")
+        return element_counts
+
+    def parse_formula(self):
+        tokens = self.tokenize()
+        # print(self.tokenCount(tokens))
+
+        for index in range(len(self.text)):
+            ch = self.text[index]
+            if ch in token:
+                if ch == '◊':
+                    eventually_time_range = self.text[(index + 1) : ]
+                elif ch == '□':
+                    pass
+                elif ch == '∧':
+                    pass
+                elif ch == '∨':
+                    pass
+                elif ch == '¬':
+                    pass
+                else:
+                    pass
+            else:
+                pass
+
+
+
+
+
+
+
         stack = []
         operator_stack = []
-        
+
         for token in tokens:
-            if token in ('T'):
+            if token in ('T{i}' for i in range(10)):
                 stack.append(REACH(stl, token))
-            elif token in ('O'):
+            elif token in ('O{i}' for i in range(10)):
                 stack.append(AVOID(stl, token))
             elif token in self.ltl_to_stl_mapping:
-                operator_stack.append(token)  # Push operator
+                operator_stack.append(token)
             elif token == '(':
-                operator_stack.append(token)  # Push '('
+                operator_stack.append(token)
             elif token == ')':
-                # Apply operators until '('
                 while operator_stack and operator_stack[-1] != '(':
                     operator = operator_stack.pop()
                     if operator == '¬':
@@ -50,11 +84,10 @@ class TextToSTL():
                         right = stack.pop()
                         left = stack.pop()
                         stack.append(self.ltl_to_stl_mapping[operator](1, left, right).call())
-                operator_stack.pop()  # Pop '('
+                operator_stack.pop()
             else:
                 raise ValueError(f"Unexpected token: {token}")
 
-        # If any operators are left after the loop
         while operator_stack:
             operator = operator_stack.pop()
             if operator == '¬':
@@ -70,6 +103,12 @@ class TextToSTL():
         
         return stack[0]
 
+# Example usage
+stl = STL(1, SeqReachAvoidStay(2, 1, 0.05, 1))
+formula = "(◊ T1[0 1] ∨ ◊ T2[3 4]) ∧ (□ ¬(O1 ∧ O2))"
+semantic = TextToSTL(formula).parse_formula()
+# print(semantic.tokenize())
+# print(semantic.tokenCount(semantic.tokenize()))
 
 
 

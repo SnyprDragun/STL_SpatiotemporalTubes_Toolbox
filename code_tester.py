@@ -749,20 +749,625 @@
 # print(semantic)
 
 
+# import re
+
+# class STL:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+
+# class REACH:
+#     def __init__(self, stl, target):
+#         self.stl = stl
+#         self.target = target
+    
+#     def call(self):
+#         return f"REACH({self.target})"
+
+# class AVOID:
+#     def __init__(self, stl, obstacle):
+#         self.stl = stl
+#         self.obstacle = obstacle
+    
+#     def call(self):
+#         return f"AVOID({self.obstacle})"
+
+# class EVENTUALLY:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+#     def call(self):
+#         return f"EVENTUALLY({self.operation})"
+
+# class ALWAYS:
+#     def __init__(self, level, operation):
+#         self.level = level
+#         self.operation = operation
+    
+#     def call(self):
+#         return f"ALWAYS({self.operation})"
+
+# class AND:
+#     def __init__(self, level, left, right):
+#         self.level = level
+#         self.left = left
+#         self.right = right
+    
+#     def call(self):
+#         return f"AND({self.left}, {self.right})"
+
+# class OR:
+#     def __init__(self, level, left, right):
+#         self.level = level
+#         self.left = left
+#         self.right = right
+    
+#     def call(self):
+#         return f"OR({self.left}, {self.right})"
+
+# # Map LTL symbols to STL functions
+# ltl_to_stl_mapping = {
+#     '◊': EVENTUALLY,
+#     '□': ALWAYS,
+#     '∧': AND,
+#     '∨': OR,
+#     '¬': AVOID  # Negation treated as avoiding the obstacle
+# }
+
+# # Improved tokenization function
+# def tokenize(formula):
+#     # Split formula by operators, parentheses, and atomic propositions
+#     tokens = re.findall(r'(\w+|[◊□¬∧∨()])', formula)
+#     return tokens
+
+# # Parsing the formula and dynamically building the STL expression
+# def parse_formula(stl, formula):
+#     tokens = tokenize(formula)
+    
+#     stack = []
+#     operator_stack = []
+    
+#     for token in tokens:
+#         if token in ('T1', 'T2'):
+#             stack.append(REACH(stl, token).call())
+#         elif token in ('O1', 'O2'):
+#             stack.append(AVOID(stl, token).call())
+#         elif token in ltl_to_stl_mapping:
+#             operator_stack.append(token)  # Push operator
+#         elif token == '(':
+#             operator_stack.append(token)  # Push '('
+#         elif token == ')':
+#             # Apply operators until '('
+#             while operator_stack and operator_stack[-1] != '(':
+#                 operator = operator_stack.pop()
+#                 if operator == '¬':
+#                     operand = stack.pop()
+#                     stack.append(ltl_to_stl_mapping[operator](stl, operand).call())
+#                 else:
+#                     right = stack.pop()
+#                     left = stack.pop()
+#                     stack.append(ltl_to_stl_mapping[operator](1, left, right).call())
+#             operator_stack.pop()  # Pop '('
+#         else:
+#             raise ValueError(f"Unexpected token: {token}")
+
+#     # If any operators are left after the loop
+#     while operator_stack:
+#         operator = operator_stack.pop()
+#         if operator == '¬':
+#             operand = stack.pop()
+#             stack.append(ltl_to_stl_mapping[operator](stl, operand).call())
+#         else:
+#             right = stack.pop()
+#             left = stack.pop()
+#             stack.append(ltl_to_stl_mapping[operator](1, left, right).call())
+
+#     if len(stack) != 1:
+#         raise ValueError("Formula parsing error: incomplete or invalid formula.")
+    
+#     return stack[0]
+
+# # General function to convert LTL formula to STL
+# def transform_formula(stl, formula):
+#     return parse_formula(stl, formula)
+
+# # Example usage
+# stl = STL(1, "SeqReachAvoidStay")
+# formula = "(◊ T1 ∨ ◊ T2) ∧ (□ ¬(O1 ∧ O2))"  # Input formula
+# semantic = transform_formula(stl, formula)
+# print(semantic)
+
+
+# import re
+# from typing import Dict, Callable
+
+# # Define the STL classes and functions (placeholders)
+# class STL:
+#     def __init__(self, level, func):
+#         self.level = level
+#         self.func = func
+
+# class SeqReachAvoidStay:
+#     def call(self):
+#         # Placeholder function
+#         return "SeqReachAvoidStay"
+
+# class AND:
+#     def __init__(self, level, *args):
+#         self.level = level
+#         self.args = args
+#     def call(self):
+#         # Placeholder function
+#         return "AND"
+
+# class OR:
+#     def __init__(self, level, *args):
+#         self.level = level
+#         self.args = args
+#     def call(self):
+#         # Placeholder function
+#         return "OR"
+
+# class EVENTUALLY:
+#     def __init__(self, level, condition):
+#         self.level = level
+#         self.condition = condition
+#     def call(self):
+#         # Placeholder function
+#         return "EVENTUALLY"
+
+# class ALWAYS:
+#     def __init__(self, level, condition):
+#         self.level = level
+#         self.condition = condition
+#     def call(self):
+#         # Placeholder function
+#         return "ALWAYS"
+
+# class REACH:
+#     def __init__(self, stl, condition):
+#         self.stl = stl
+#         self.condition = condition
+#     def call(self):
+#         # Placeholder function
+#         return "REACH"
+
+# class AVOID:
+#     def __init__(self, stl, condition):
+#         self.stl = stl
+#         self.condition = condition
+#     def call(self):
+#         # Placeholder function
+#         return "AVOID"
+
+# # Function to parse and convert list-like brackets
+# def parse_bracket_contents(contents: str):
+#     # Remove any surrounding brackets and split by commas
+#     contents = contents.strip('[]').strip()
+#     return list(map(float, contents.split(',')))
+
+# def parse_formula(stl, formula: str):
+#     operators = {'∧': AND, '∨': OR}
+#     temporal_operators = {'♦': EVENTUALLY, '□': ALWAYS}
+#     ltl_to_stl_mapping = {'REACH': REACH, 'AVOID': AVOID}
+
+#     tokens = re.split(r'(\s*∧\s*|\s*∨\s*|\s*♦\s*|\s*□\s*)', formula)
+#     stack = []
+    
+#     i = 0
+#     while i < len(tokens):
+#         token = tokens[i].strip()
+#         if not token:
+#             i += 1
+#             continue
+        
+#         if token in operators:
+#             right = stack.pop()
+#             left = stack.pop()
+#             stack.append(operators[token](1, left, right).call())
+        
+#         elif token in temporal_operators:
+#             i += 1
+#             next_token = tokens[i].strip()
+#             if not next_token:
+#                 raise ValueError("Missing temporal operator condition.")
+#             if next_token.startswith('[') and next_token.endswith(']'):
+#                 condition = parse_bracket_contents(next_token)
+#                 stack.append(temporal_operators[token](1, condition).call())
+#             else:
+#                 raise ValueError(f"Unexpected token: {next_token}")
+        
+#         elif token.startswith('¬'):
+#             i += 1
+#             next_token = tokens[i].strip()
+#             if next_token.startswith('[') and next_token.endswith(']'):
+#                 condition = parse_bracket_contents(next_token)
+#                 stack.append(ALWAYS(1, AVOID(stl, condition)).call())
+#             else:
+#                 raise ValueError(f"Unexpected token: {next_token}")
+        
+#         else:
+#             if token.startswith('[') and token.endswith(']'):
+#                 condition = parse_bracket_contents(token)
+#                 stack.append(condition)
+#             else:
+#                 raise ValueError(f"Unexpected token: {token}")
+        
+#         i += 1
+
+#     if len(stack) != 1:
+#         raise ValueError("Mismatched parentheses or missing operator.")
+
+#     return stack[0]
+
+# def transform_formula(stl, formula: str):
+#     try:
+#         return parse_formula(stl, formula)
+#     except ValueError as e:
+#         print(f"Error processing formula: {formula}")
+#         print(f"Error message: {e}")
+#         return None
+
+# # Example usage
+# formula = "♦[T1 [10, 10, -5, 5]] ∧ □ ¬[O1 [−10, 3, 8, 10]]"
+# stl = STL(1, SeqReachAvoidStay())
+# semantic = transform_formula(stl, formula)
+# print(semantic)
+
+
+
+# import re
+# from typing import List, Union, Tuple
+
+# # Helper functions
+# def parse_bracket_contents(contents: str) -> List[float]:
+#     # Remove brackets and split by commas
+#     contents = contents.strip()[1:-1]  # Remove brackets
+#     contents = contents.replace('−', '-')  # Replace '−' with '-'
+#     return [float(x) for x in contents.split(',')]
+
+# def tokenize_formula(formula: str) -> List[Tuple[str, str]]:
+#     token_patterns = [
+#         (r'□|♦|∧|∨|¬', 'OPERATOR'),
+#         (r'\[.*?\]', 'BRACKETS'),
+#         (r'[^\s\[\]∧∨□♦¬]+', 'VARIABLE')
+#     ]
+    
+#     combined_pattern = '|'.join(f'(?P<{name}>{pattern})' for pattern, name in token_patterns)
+#     regex = re.compile(combined_pattern)
+    
+#     tokens = []
+#     for match in regex.finditer(formula):
+#         token_type = match.lastgroup
+#         token_value = match.group(token_type)
+#         tokens.append((token_type, token_value))
+    
+#     return tokens
+
+# def parse_formula(formula: str) -> Union[str, None]:
+#     operators = {'∧': 'AND', '∨': 'OR'}
+#     temporal_operators = {'♦': 'EVENTUALLY', '□': 'ALWAYS'}
+#     negation = '¬'
+    
+#     tokens = tokenize_formula(formula)
+#     stack = []
+#     i = 0
+    
+#     while i < len(tokens):
+#         token_type, token_value = tokens[i]
+        
+#         if token_type == 'OPERATOR':
+#             if token_value in operators:
+#                 right = stack.pop()
+#                 left = stack.pop()
+#                 stack.append(f"{operators[token_value]}({left}, {right})")
+#             elif token_value in temporal_operators:
+#                 i += 1
+#                 token_type, next_token = tokens[i]
+#                 if token_type == 'BRACKETS':
+#                     condition = parse_bracket_contents(next_token)
+#                     stack.append(f"{temporal_operators[token_value]}({condition})")
+#                 else:
+#                     return f"Unexpected token: {next_token}"
+#             elif token_value == negation:
+#                 i += 1
+#                 token_type, next_token = tokens[i]
+#                 if token_type == 'BRACKETS':
+#                     condition = parse_bracket_contents(next_token)
+#                     stack.append(f"NOT({condition})")
+#                 else:
+#                     return f"Unexpected token: {next_token}"
+#             else:
+#                 return f"Unexpected token: {token_value}"
+        
+#         elif token_type == 'BRACKETS':
+#             condition = parse_bracket_contents(token_value)
+#             stack.append(condition)
+        
+#         elif token_type == 'VARIABLE':
+#             if i + 1 < len(tokens) and tokens[i + 1][0] == 'BRACKETS':
+#                 next_token = tokens[i + 1][1]
+#                 condition = parse_bracket_contents(next_token)
+#                 if token_value.startswith('♦'):
+#                     stack.append(f"EVENTUALLY({condition})")
+#                 elif token_value.startswith('□'):
+#                     stack.append(f"ALWAYS({condition})")
+#                 i += 1
+                
+#         i += 1
+    
+#     if len(stack) != 1:
+#         return "Mismatched parentheses or missing operator."
+    
+#     return stack[0]
+
+# def transform_formula(formula: str) -> Union[str, None]:
+#     try:
+#         return parse_formula(formula)
+#     except Exception as e:
+#         return f"Error processing formula: {e}"
+
+# # Example usage
+# formulas = [
+#     "♦[T1 [10, 10, -5, 5]] ∧ □ ¬[O1 [−10, 3, 8, 10]]",
+#     "□ ¬[O1 [0, 0, 0, 0]]",
+#     "♦[T1 [5, 10, −10, 10]] ∧ ♦[T2 [−10, 10, −10, 7]] ∧ ♦[T3 [3, 3, 3, 3]]",
+#     "♦[T1 [5, 10, −10, 10]] ∧ □ ¬[O1 [−10, 1, 2, 10]]",
+#     "□ ¬[O1 [−10, 2, 7, 10]] ∧ ♦[T1 [10, 10, 10, 10]]",
+#     "□[♦[T1 [8, 8, 8, 8]]]",
+#     "□ ¬[O1 [−10, 3, −10, 3]] ∧ ♦[T1 [7, 10, 7, 10]]",
+#     "□ ¬[O1 [−10, 4, −10, 4]] ∧ ♦[T1 [8, 10, 8, 10]]",
+#     "♦[T1 [6, 10, 6, 10]] ∧ □ ¬[O1 [6, 10, 6, 10]]",
+#     "□[♦[T1 [5, 10, −10, 10]] ∧ ♦[T2 [−10, 10, 7, 10]]]"
+# ]
+
+# for formula in formulas:
+#     result = transform_formula(formula)
+#     print(f"Formula: {formula}")
+#     print(f"Result: {result}\n")
+
+
+# def slice_after_symbols(formula: str):
+#     # List to store the results
+#     results = []
+#     # Symbols to check
+#     symbols = ['◊', '□']
+    
+#     # Iterate through the formula string
+#     i = 0
+#     while i < len(formula):
+#         # If a symbol is found, slice the string
+#         if formula[i] in symbols:
+#             start = i + 1  # Start slicing after the symbol
+#             end = formula.find(']', start)  # Find the first closing bracket
+#             if end != -1:
+#                 # Append the sliced part to the results list
+#                 results.append(formula[start:end+1])
+#                 i = end + 1  # Continue searching after this slice
+#             else:
+#                 break  # Exit if no closing bracket found
+#         else:
+#             i += 1  # Continue to next character
+
+#     return results
+
+# # Test cases
+# formula1 = "◊[T1 [10, 10, -5, 5]] ∧ □¬[O1 [−10, 3, 8, 10]]"
+# formula2 = "□[◊[T1 [5, 10, −10, 10]] ∧ ◊[T2 [−10, 10, −10, 7]] ∧ ◊[T3 [3, 3, 3, 3]]]"
+
+# print(slice_after_symbols(formula1))  # Output: ['[T1 [10, 10, -5, 5]]', '[O1 [−10, 3, 8, 10]]']
+# print(slice_after_symbols(formula2))  # Output: ['[T1 [5, 10, −10, 10]]', '[T2 [−10, 10
+
+
+# import re
+
+# class STL:
+#     def __init__(self, id, sequence):
+#         self.id = id
+#         self.sequence = sequence
+
+# class SeqReachAvoidStay:
+#     pass
+
+# class REACH:
+#     def __init__(self, stl, target):
+#         self.stl = stl
+#         self.target = target
+    
+#     def call(self):
+#         return f"REACH({self.stl}, {self.target})"
+
+# class AVOID:
+#     def __init__(self, stl, obstacle):
+#         self.stl = stl
+#         self.obstacle = obstacle
+    
+#     def call(self):
+#         return f"AVOID({self.stl}, {self.obstacle})"
+
+# class EVENTUALLY:
+#     def __init__(self, id, reach_expr):
+#         self.id = id
+#         self.reach_expr = reach_expr
+    
+#     def call(self):
+#         return f"EVENTUALLY({self.id}, {self.reach_expr})"
+
+# class ALWAYS:
+#     def __init__(self, id, avoid_expr):
+#         self.id = id
+#         self.avoid_expr = avoid_expr
+    
+#     def call(self):
+#         return f"ALWAYS({self.id}, {self.avoid_expr})"
+
+# class AND:
+#     def __init__(self, id, expr1, expr2):
+#         self.id = id
+#         self.expr1 = expr1
+#         self.expr2 = expr2
+    
+#     def call(self):
+#         return f"AND({self.id}, {self.expr1}, {self.expr2})"
+
+# class OR:
+#     def __init__(self, id, expr1, expr2):
+#         self.id = id
+#         self.expr1 = expr1
+#         self.expr2 = expr2
+    
+#     def call(self):
+#         return f"OR({self.id}, {self.expr1}, {self.expr2})"
+
+
+# # Generalized function to parse and simplify the formula
+# def parse_formula(formula):
+#     # Replace the LTL operators with their corresponding STL functions
+#     def replace_operators(match):
+#         # Extract the inner targets or obstacles (T1, T2, O1, O2)
+#         operator = match.group(1)
+#         target = match.group(2)
+
+#         if operator == '◊':  # Eventually
+#             return f"EVENTUALLY(1, REACH(stl, {target}).call())"
+#         elif operator == '□':  # Always
+#             return f"ALWAYS(1, AVOID(stl, {target}).call())"
+#         else:
+#             return match.group(0)  # No replacement
+
+#     # Initialize STL object and sequences
+#     stl = STL(1, SeqReachAvoidStay())
+
+#     # Parse formula step 1: Replace ◊ and □ operators with corresponding calls
+#     parsed_formula = re.sub(r'(◊|□)\s*(T\d+|O\d+)', replace_operators, formula)
+
+#     # Parse formula step 2: Simplify the AND and OR combinations
+#     parsed_formula = re.sub(r'◊ T(\d+)\s*∨\s*◊ T(\d+)', r"OR(1, EVENTUALLY(1, REACH(stl, T\1)).call(), EVENTUALLY(1, REACH(stl, T\2)).call())", parsed_formula)
+#     parsed_formula = re.sub(r'□ ¬ O(\d+)\s*∧\s*□ ¬ O(\d+)', r"AND(1, ALWAYS(1, AVOID(stl, O\1)).call(), ALWAYS(1, AVOID(stl, O\2)).call())", parsed_formula)
+
+#     # Parse formula step 3: Add the AND condition at the outer level
+#     parsed_formula = f"AND(1, {parsed_formula})"
+
+#     return parsed_formula
+
+
+# # Example usage
+# ltl_formula = "((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))"
+# simplified_formula = parse_formula(ltl_formula)
+
+# print("Simplified formula:")
+# print(simplified_formula)
+
+
+# import re
+
+# class STL:
+#     def __init__(self, id, sequence):
+#         self.id = id
+#         self.sequence = sequence
+
+# class SeqReachAvoidStay:
+#     pass
+
+# class REACH:
+#     def __init__(self, stl, target):
+#         self.stl = stl
+#         self.target = target
+    
+#     def call(self):
+#         return f"REACH({self.stl}, {self.target})"
+
+# class AVOID:
+#     def __init__(self, stl, obstacle):
+#         self.stl = stl
+#         this.obstacle = obstacle
+    
+#     def call(self):
+#         return f"AVOID({self.stl}, {self.obstacle})"
+
+# class EVENTUALLY:
+#     def __init__(self, id, reach_expr):
+#         self.id = id
+#         self.reach_expr = reach_expr
+    
+#     def call(self):
+#         return f"EVENTUALLY({self.id}, {self.reach_expr})"
+
+# class ALWAYS:
+#     def __init__(self, id, avoid_expr):
+#         self.id = id
+#         self.avoid_expr = avoid_expr
+    
+#     def call(self):
+#         return f"ALWAYS({self.id}, {self.avoid_expr})"
+
+# class AND:
+#     def __init__(self, id, expr1, expr2):
+#         self.id = id
+#         self.expr1 = expr1
+#         self.expr2 = expr2
+    
+#     def call(self):
+#         return f"AND({self.id}, {self.expr1}, {self.expr2})"
+
+# class OR:
+#     def __init__(self, id, expr1, expr2):
+#         self.id = id
+#         self.expr1 = expr1
+#         self.expr2 = expr2
+    
+#     def call(self):
+#         return f"OR({self.id}, {self.expr1}, {self.expr2})"
+
+
+# # Generalized function to parse and simplify the formula
+# def parse_formula(formula):
+#     stl = STL(1, SeqReachAvoidStay())  # Initialize the STL object
+
+#     # Step 1: Replace ◊ (eventually) and □ (always) with corresponding STL expressions
+#     formula = re.sub(r'◊\s*(T\d+)', lambda m: f"EVENTUALLY(1, REACH(stl, {m.group(1)}).call())", formula)
+#     formula = re.sub(r'□\s*¬\s*(O\d+)', lambda m: f"ALWAYS(1, AVOID(stl, {m.group(1)}).call())", formula)
+
+#     # Step 2: Replace ∨ (or) and ∧ (and) with OR and AND operations
+#     formula = re.sub(r'\s*∨\s*', lambda m: ' OR(1, ', formula)
+#     formula = re.sub(r'\s*∧\s*', lambda m: ' AND(1, ', formula)
+
+#     # Add the closing parentheses where appropriate for OR/AND
+#     # For simplification, we'll assume a basic structure for now
+#     # You'll need to refine the parentheses depending on how nested the formula is
+#     formula = re.sub(r'OR\(1, ([^\)]*)\)', r'OR(1, \1)', formula)
+#     formula = re.sub(r'AND\(1, ([^\)]*)\)', r'AND(1, \1)', formula)
+
+#     # Wrap everything in an outer AND call
+#     return f"AND(1, {formula})"
+
+
+# # Example usage
+# ltl_formula = "((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))"
+# simplified_formula = parse_formula(ltl_formula)
+
+# print("Simplified formula:")
+# print(simplified_formula)
+
 import re
 
 class STL:
-    def __init__(self, level, operation):
-        self.level = level
-        self.operation = operation
+    def __init__(self, id, sequence):
+        self.id = id
+        self.sequence = sequence
 
+class SeqReachAvoidStay:
+    pass
+
+# Parsing functions to wrap operations
 class REACH:
     def __init__(self, stl, target):
         self.stl = stl
         self.target = target
     
     def call(self):
-        return f"REACH({self.target})"
+        return f"◊ {self.target}"
 
 class AVOID:
     def __init__(self, stl, obstacle):
@@ -770,110 +1375,55 @@ class AVOID:
         self.obstacle = obstacle
     
     def call(self):
-        return f"AVOID({self.obstacle})"
-
-class EVENTUALLY:
-    def __init__(self, level, operation):
-        self.level = level
-        self.operation = operation
-    
-    def call(self):
-        return f"EVENTUALLY({self.operation})"
-
-class ALWAYS:
-    def __init__(self, level, operation):
-        self.level = level
-        self.operation = operation
-    
-    def call(self):
-        return f"ALWAYS({self.operation})"
+        return f"□ ¬ {self.obstacle}"
 
 class AND:
-    def __init__(self, level, left, right):
-        self.level = level
-        self.left = left
-        self.right = right
+    def __init__(self, id, expr1, expr2):
+        self.id = id
+        self.expr1 = expr1
+        self.expr2 = expr2
     
     def call(self):
-        return f"AND({self.left}, {self.right})"
+        return f"AND({self.id}, {self.expr1}, {self.expr2})"
 
 class OR:
-    def __init__(self, level, left, right):
-        self.level = level
-        self.left = left
-        self.right = right
+    def __init__(self, id, expr1, expr2):
+        self.id = id
+        self.expr1 = expr1
+        self.expr2 = expr2
     
     def call(self):
-        return f"OR({self.left}, {self.right})"
+        return f"OR({self.id}, {self.expr1}, {self.expr2})"
 
-# Map LTL symbols to STL functions
-ltl_to_stl_mapping = {
-    '◊': EVENTUALLY,
-    '□': ALWAYS,
-    '∧': AND,
-    '∨': OR,
-    '¬': AVOID  # Negation treated as avoiding the obstacle
-}
+# Generalized function to parse and simplify the formula
+def parse_formula(formula):
+    stl = STL(1, SeqReachAvoidStay())  # Initialize the STL object
 
-# Improved tokenization function
-def tokenize(formula):
-    # Split formula by operators, parentheses, and atomic propositions
-    tokens = re.findall(r'(\w+|[◊□¬∧∨()])', formula)
-    return tokens
+    # Step 1: Replace ◊ (eventually) and □ (always) with corresponding STL expressions
+    formula = re.sub(r'◊\s*(T\d+)', lambda m: f"◊ {m.group(1)}", formula)
+    formula = re.sub(r'□\s*¬\s*(O\d+)', lambda m: f"□ ¬ {m.group(1)}", formula)
 
-# Parsing the formula and dynamically building the STL expression
-def parse_formula(stl, formula):
-    tokens = tokenize(formula)
-    
-    stack = []
-    operator_stack = []
-    
-    for token in tokens:
-        if token in ('T1', 'T2'):
-            stack.append(REACH(stl, token).call())
-        elif token in ('O1', 'O2'):
-            stack.append(AVOID(stl, token).call())
-        elif token in ltl_to_stl_mapping:
-            operator_stack.append(token)  # Push operator
-        elif token == '(':
-            operator_stack.append(token)  # Push '('
-        elif token == ')':
-            # Apply operators until '('
-            while operator_stack and operator_stack[-1] != '(':
-                operator = operator_stack.pop()
-                if operator == '¬':
-                    operand = stack.pop()
-                    stack.append(ltl_to_stl_mapping[operator](stl, operand).call())
-                else:
-                    right = stack.pop()
-                    left = stack.pop()
-                    stack.append(ltl_to_stl_mapping[operator](1, left, right).call())
-            operator_stack.pop()  # Pop '('
-        else:
-            raise ValueError(f"Unexpected token: {token}")
+    # Step 2: Recursively handle nested logical operations for AND and OR
 
-    # If any operators are left after the loop
-    while operator_stack:
-        operator = operator_stack.pop()
-        if operator == '¬':
-            operand = stack.pop()
-            stack.append(ltl_to_stl_mapping[operator](stl, operand).call())
-        else:
-            right = stack.pop()
-            left = stack.pop()
-            stack.append(ltl_to_stl_mapping[operator](1, left, right).call())
+    def handle_and_or(expr):
+        # Handle OR first to keep proper order
+        if '∨' in expr:
+            parts = [handle_and_or(part.strip()) for part in expr.split('∨')]
+            return f"OR(1, ({', '.join(parts)}))"
+        # Handle AND after OR to ensure proper nesting
+        if '∧' in expr:
+            parts = [handle_and_or(part.strip()) for part in expr.split('∧')]
+            return f"AND(1, ({', '.join(parts)}))"
+        return expr  # Return the unchanged part if no AND/OR is present
 
-    if len(stack) != 1:
-        raise ValueError("Formula parsing error: incomplete or invalid formula.")
-    
-    return stack[0]
+    # Apply the AND/OR handler on the entire formula
+    formula = handle_and_or(formula)
 
-# General function to convert LTL formula to STL
-def transform_formula(stl, formula):
-    return parse_formula(stl, formula)
+    return f"AND(1, {formula})"
 
 # Example usage
-stl = STL(1, "SeqReachAvoidStay")
-formula = "(◊ T1 ∨ ◊ T2) ∧ (□ ¬(O1 ∧ O2))"  # Input formula
-semantic = transform_formula(stl, formula)
-print(semantic)
+ltl_formula = "((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))"
+simplified_formula = parse_formula(ltl_formula)
+
+print("Simplified formula:")
+print(simplified_formula)
