@@ -1,8 +1,6 @@
 #
 # FOCAS Lab' STL-STT Engine
 #
-# re-compatible interface for the sre matching engine
-#
 # Copyright (c) 2024 by FOCAS Lab, RBCCPS, IISc Blr.  All rights reserved.
 #
 # This version of the STL-STT library can be redistributed under CNRI's
