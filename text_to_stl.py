@@ -42,7 +42,7 @@ class TextToSTL():
             ch = self.text[index]
             if ch in token:
                 if ch == '◊':
-                    eventually_time_range = self.text[(index + 1) : ]
+                    pass
                 elif ch == '□':
                     pass
                 elif ch == '∧':

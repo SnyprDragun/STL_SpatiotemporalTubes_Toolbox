@@ -1409,11 +1409,11 @@ def parse_formula(formula):
         # Handle OR first to keep proper order
         if '∨' in expr:
             parts = [handle_and_or(part.strip()) for part in expr.split('∨')]
-            return f"OR(1, ({', '.join(parts)}))"
+            return f"OR(1, ({', '.join(expr)}))"
         # Handle AND after OR to ensure proper nesting
         if '∧' in expr:
             parts = [handle_and_or(part.strip()) for part in expr.split('∧')]
-            return f"AND(1, ({', '.join(parts)}))"
+            return f"AND(1, ({', '.join(expr)}))"
         return expr  # Return the unchanged part if no AND/OR is present
 
     # Apply the AND/OR handler on the entire formula
