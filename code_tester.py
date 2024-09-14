@@ -1350,80 +1350,177 @@
 # print("Simplified formula:")
 # print(simplified_formula)
 
-import re
+# import re
 
-class STL:
-    def __init__(self, id, sequence):
-        self.id = id
-        self.sequence = sequence
+# class STL:
+#     def __init__(self, id, sequence):
+#         self.id = id
+#         self.sequence = sequence
 
-class SeqReachAvoidStay:
-    pass
+# class SeqReachAvoidStay:
+#     pass
 
-# Parsing functions to wrap operations
-class REACH:
-    def __init__(self, stl, target):
-        self.stl = stl
-        self.target = target
+# # Parsing functions to wrap operations
+# class REACH:
+#     def __init__(self, stl, target):
+#         self.stl = stl
+#         self.target = target
     
-    def call(self):
-        return f"◊ {self.target}"
+#     def call(self):
+#         return f"◊ {self.target}"
 
-class AVOID:
-    def __init__(self, stl, obstacle):
-        self.stl = stl
-        self.obstacle = obstacle
+# class AVOID:
+#     def __init__(self, stl, obstacle):
+#         self.stl = stl
+#         self.obstacle = obstacle
     
-    def call(self):
-        return f"□ ¬ {self.obstacle}"
+#     def call(self):
+#         return f"□ ¬ {self.obstacle}"
 
-class AND:
-    def __init__(self, id, expr1, expr2):
-        self.id = id
-        self.expr1 = expr1
-        self.expr2 = expr2
+# class AND:
+#     def __init__(self, id, expr1, expr2):
+#         self.id = id
+#         self.expr1 = expr1
+#         self.expr2 = expr2
     
-    def call(self):
-        return f"AND({self.id}, {self.expr1}, {self.expr2})"
+#     def call(self):
+#         return f"AND({self.id}, {self.expr1}, {self.expr2})"
 
-class OR:
-    def __init__(self, id, expr1, expr2):
-        self.id = id
-        self.expr1 = expr1
-        self.expr2 = expr2
+# class OR:
+#     def __init__(self, id, expr1, expr2):
+#         self.id = id
+#         self.expr1 = expr1
+#         self.expr2 = expr2
     
-    def call(self):
-        return f"OR({self.id}, {self.expr1}, {self.expr2})"
+#     def call(self):
+#         return f"OR({self.id}, {self.expr1}, {self.expr2})"
 
-# Generalized function to parse and simplify the formula
-def parse_formula(formula):
-    stl = STL(1, SeqReachAvoidStay())  # Initialize the STL object
+# # Generalized function to parse and simplify the formula
+# def parse_formula(formula):
+#     stl = STL(1, SeqReachAvoidStay())  # Initialize the STL object
 
-    # Step 1: Replace ◊ (eventually) and □ (always) with corresponding STL expressions
-    formula = re.sub(r'◊\s*(T\d+)', lambda m: f"◊ {m.group(1)}", formula)
-    formula = re.sub(r'□\s*¬\s*(O\d+)', lambda m: f"□ ¬ {m.group(1)}", formula)
+#     # Step 1: Replace ◊ (eventually) and □ (always) with corresponding STL expressions
+#     formula = re.sub(r'◊\s*(T\d+)', lambda m: f"◊ {m.group(1)}", formula)
+#     formula = re.sub(r'□\s*¬\s*(O\d+)', lambda m: f"□ ¬ {m.group(1)}", formula)
 
-    # Step 2: Recursively handle nested logical operations for AND and OR
+#     # Step 2: Recursively handle nested logical operations for AND and OR
 
-    def handle_and_or(expr):
-        # Handle OR first to keep proper order
-        if '∨' in expr:
-            parts = [handle_and_or(part.strip()) for part in expr.split('∨')]
-            return f"OR(1, ({', '.join(expr)}))"
-        # Handle AND after OR to ensure proper nesting
-        if '∧' in expr:
-            parts = [handle_and_or(part.strip()) for part in expr.split('∧')]
-            return f"AND(1, ({', '.join(expr)}))"
-        return expr  # Return the unchanged part if no AND/OR is present
+#     def handle_and_or(expr):
+#         # Handle OR first to keep proper order
+#         if '∨' in expr:
+#             parts = [handle_and_or(part.strip()) for part in expr.split('∨')]
+#             return f"OR(1, ({', '.join(expr)}))"
+#         # Handle AND after OR to ensure proper nesting
+#         if '∧' in expr:
+#             parts = [handle_and_or(part.strip()) for part in expr.split('∧')]
+#             return f"AND(1, ({', '.join(expr)}))"
+#         return expr  # Return the unchanged part if no AND/OR is present
 
-    # Apply the AND/OR handler on the entire formula
-    formula = handle_and_or(formula)
+#     # Apply the AND/OR handler on the entire formula
+#     formula = handle_and_or(formula)
 
-    return f"AND(1, {formula})"
+#     return f"AND(1, {formula})"
 
-# Example usage
-ltl_formula = "((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))"
-simplified_formula = parse_formula(ltl_formula)
+# # Example usage
+# ltl_formula = "((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))"
+# simplified_formula = parse_formula(ltl_formula)
 
-print("Simplified formula:")
-print(simplified_formula)
+# print("Simplified formula:")
+# print(simplified_formula)
+
+
+###############################
+# def check_parentheses(s):
+#     stack = []
+#     for char in s:
+#         if char == '(':
+#             stack.append(char)
+#         elif char == ')':
+#             if not stack:
+#                 return False
+#             stack.pop()
+#     return len(stack) == 0
+
+# def expression_within_bracket(exp):
+#     open_count = 0
+#     close_count = 0
+#     count = 0
+#     i_pos = 0
+#     for i in exp:
+#         if i == '(':
+#             open = i_pos
+#             j_pos = i_pos
+#             for j in exp[(i_pos+1):]:
+#                 if j == '(':
+#                     count += 1
+#                     open_count += 1
+#                 if j == ')':
+#                     count -= 1
+#                     close_count += 1
+#                 if j == ')' and count == -1:
+#                     close = j_pos
+#                     if exp[open] == '(' and exp[close + 1] == ')':
+#                         if check_parentheses(exp[open + 1 : close + 1]):
+#                             print("check: ", exp[open + 1 : close + 1])
+#                 j_pos += 1
+#         count = 0
+#         i_pos += 1
+
+# exp1 = '(see you (tomorrow), (bye), (tata(lmao)))'
+# exp2 = 'mera (name) toh (pata(hi(hoga)))'
+# expression_within_bracket(exp1)
+# expression_within_bracket(exp2)
+
+
+
+# print(bracket_closure(exp))
+# print(exp[4:])
+# for i in exp[4:]:
+#     print(i)
+
+
+# input: '(hi)(nita)'
+# output: hi
+#         nita
+
+
+# input: '(see you (tomorrow), (bye), (tata(lmao)))'
+# output: see you (tomorrow), (bye), (tata(lmao))
+#         tomorrow
+#         bye
+#         tata(lmao)
+#         lmao
+
+# input: 'mera (name) toh (pata(hi(hoga)))'
+# output: name
+#         pata(hi(hoga))
+#         hi(hoga)
+#         hoga
+####################################
+
+
+def expression_within_bracket(exp):
+    open_indices = []
+    i_pos = 0
+    
+    while i_pos < len(exp):
+        if exp[i_pos] == '(':
+            open_indices.append(i_pos)
+        elif exp[i_pos] == ')' and open_indices:
+            open = open_indices.pop()
+            if check_parentheses(exp[open:i_pos+1]):
+                print("check: ", exp[open:i_pos+1])
+        i_pos += 1
+
+def check_parentheses(s):
+    stack = []
+    for char in s:
+        if char == '(':
+            stack.append(char)
+        elif char == ')':
+            if not stack:
+                return False
+            stack.pop()
+    return len(stack) == 0
+
+expression_within_bracket('(see you (tomorrow), (bye), (tata(lmao)))')
