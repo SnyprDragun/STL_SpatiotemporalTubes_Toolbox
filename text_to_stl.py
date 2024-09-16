@@ -1,126 +1,225 @@
 #!/opt/homebrew/bin/python3.11
 '''script to convert stl semantic to executable form'''
+import os
 import re
+import subprocess
 from solver import *
 from stl_main import *
 from action_classes import *
 from error_handling import *
-from collections import Counter
 from seq_reach_avoid_stay import *
 
 class TextToSTL():
-    ltl_to_stl_mapping = {
-        '◊': EVENTUALLY,
-        '□': ALWAYS,
-        '∧': AND,
-        '∨': OR,
-        '¬': AVOID
-    }
-
     def __init__(self, text):
         self.text = text
+        self.variable_map = {
+                                'T₁': [0, 1],
+                                'T₂': [2, 3],
+                                'O₁': [5, 6],
+                                'O₂': [0, 1]
+                            }
 
-    def tokenize(self):
-        '''Split text by operators, parentheses, and atomic propositions'''
-        tokens = re.findall(r'(\w+|[◊□¬∧∨()])', self.text)
-        return tokens
+    def declassify(self, semantic):
+        i_pos = 0
+        count = 0
+        for i in semantic:
+            if i == '∧':
+                semantic = semantic.replace(i, ',')
+                semantic = 'AND[' + semantic[1:len(semantic) - 1] + ']'
+            if i == '∨':
+                semantic = semantic.replace(i, ',')
+                semantic = 'OR[' + semantic[1:len(semantic) - 1] + ']'
+            if i == '◊':
+                semantic = semantic.replace(i, 'EVENTUALLY')
+            if i == '□':
+                semantic = semantic.replace(i, 'ALWAYS')
+            if i == '¬':
+                semantic = semantic.replace(i, 'AVOID')
+        return semantic
 
-    def tokenCount(self, tokens):
-        element_counts = dict(Counter(tokens))
-        distinct_count = len(element_counts)
-        print(f"Total number of distinct elements: {distinct_count}")
-        print("Count of each distinct element:")
-        for element, count in element_counts.items():
-            print(f"{element}: {count}")
-        return element_counts
-
-    def parse_formula(self):
-        tokens = self.tokenize()
-        # print(self.tokenCount(tokens))
-
-        for index in range(len(self.text)):
-            ch = self.text[index]
-            if ch in token:
-                if ch == '◊':
-                    pass
-                elif ch == '□':
-                    pass
-                elif ch == '∧':
-                    pass
-                elif ch == '∨':
-                    pass
-                elif ch == '¬':
-                    pass
-                else:
-                    pass
-            else:
-                pass
-
-
-
-
-
-
-
+    def final(self, temp):
+        exp = temp
         stack = []
-        operator_stack = []
+        for i in range(len(exp)):
+            for j in range (len(exp)):
+                if exp[i] == '(' and exp[j] == ')' and '(' not in exp[i+1:j] and ')' not in exp[i+1:j] and exp[i+1:j] != '':
+                    stack.append(exp[i:j+1])
+        # print(stack)
+        for item in stack:
+            temp = temp.replace(item, self.declassify(item), 1)
+        print(temp)
+        if '∧' not in temp:
+            print(temp)
+            final_str = temp
+        else:
+            self.final(temp)
+        return final_str
 
-        for token in tokens:
-            if token in ('T{i}' for i in range(10)):
-                stack.append(REACH(stl, token))
-            elif token in ('O{i}' for i in range(10)):
-                stack.append(AVOID(stl, token))
-            elif token in self.ltl_to_stl_mapping:
-                operator_stack.append(token)
-            elif token == '(':
-                operator_stack.append(token)
-            elif token == ')':
-                while operator_stack and operator_stack[-1] != '(':
-                    operator = operator_stack.pop()
-                    if operator == '¬':
-                        operand = stack.pop()
-                        stack.append(self.ltl_to_stl_mapping[operator](stl, operand).call())
-                    else:
-                        right = stack.pop()
-                        left = stack.pop()
-                        stack.append(self.ltl_to_stl_mapping[operator](1, left, right).call())
-                operator_stack.pop()
+    # Helper function to parse and convert the string
+    def parse_expression(expression, id=1):
+        # Remove whitespaces around brackets for cleaner parsing
+        expression = re.sub(r'\s*,\s*', ',', expression)  # Normalize commas
+        expression = re.sub(r'\s*\[\s*', '[', expression)  # Normalize brackets
+
+        def extract_arguments(inner_expr):
+            """Extracts arguments within brackets and returns them as a list."""
+            stack = []
+            result = []
+            temp = ""
+            for char in inner_expr:
+                if char == ',' and not stack:
+                    result.append(temp.strip())
+                    temp = ""
+                else:
+                    temp += char
+                    if char == '[':
+                        stack.append('[')
+                    elif char == ']':
+                        stack.pop()
+            if temp:
+                result.append(temp.strip())
+            return result
+
+        # Recursively build the expression tree
+        def build_expression(expr, id):
+            # Match different operations
+            if expr.startswith("AND["):
+                args = extract_arguments(expr[4:-1])
+                return AND(id, *[build_expression(arg, id) for arg in args])
+            elif expr.startswith("OR["):
+                args = extract_arguments(expr[3:-1])
+                return OR(id, *[build_expression(arg, id) for arg in args])
+            elif expr.startswith("ALWAYS AVOID"):
+                args = extract_arguments(expr[12:-1])
+                start, end = 2, 3  # Set default or inferred values
+                setpoints = variable_map.get(args[0], [0])  # Map the argument to setpoints
+                return ALWAYS(id, start, end, AVOID(id, start, end, setpoints).call())
+            elif expr.startswith("EVENTUALLY"):
+                args = extract_arguments(expr[11:-1])
+                start, end = 0, 1  # Set default or inferred values
+                setpoints = variable_map.get(args[0], [0])  # Map the argument to setpoints
+                return EVENTUALLY(id, start, end, REACH(id, start, end, setpoints).call())
             else:
-                raise ValueError(f"Unexpected token: {token}")
+                raise ValueError(f"Unknown expression format: {expr}")
 
-        while operator_stack:
-            operator = operator_stack.pop()
-            if operator == '¬':
-                operand = stack.pop()
-                stack.append(self.ltl_to_stl_mapping[operator](stl, operand).call())
-            else:
-                right = stack.pop()
-                left = stack.pop()
-                stack.append(self.ltl_to_stl_mapping[operator](1, left, right).call())
+        return build_expression(expression, id).call()
 
-        if len(stack) != 1:
-            raise ValueError("Formula parsing error: incomplete or invalid formula.")
-        return stack[0]
+    def create_and_run_python_file(file_name, content):
+        # Step 1: Create the Python file and write the content to it
+        with open(file_name, 'w') as f:
+            f.write(content)
 
-# Example usage
-stl = STL(1, SeqReachAvoidStay(2, 1, 0.05, 1))
-formula = "(◊ T1[0 1] ∨ ◊ T2[3 4]) ∧ (□ ¬(O1 ∧ O2))"
-semantic = TextToSTL(formula).parse_formula()
-# print(semantic.tokenize())
-# print(semantic.tokenCount(semantic.tokenize()))
+        print(f"{file_name} created successfully!")
+
+        # Step 2: Run the newly created Python file
+        try:
+            # For Windows: use 'python' instead of 'python3'
+            result = subprocess.run(['python3', file_name], capture_output=True, text=True)
+            print("Output of the script:")
+            print(result.stdout)
+            if result.stderr:
+                print("Errors:")
+                print(result.stderr)
+        except Exception as e:
+            print(f"Failed to run the script: {e}")
+
+    def execute(self):
+        # Example usage
+        expression = 'AND[OR[EVENTUALLY T₁ , EVENTUALLY T₂] , AND[ALWAYS AVOID O₁ , ALWAYS AVOID O₂]]'
+        parsed_output = self.parse_expression(expression)
+        # print(parsed_output)
+
+        # Example usage
+        file_name = 'test_script.py'
+        content = '''#!/opt/homebrew/bin/python3.11
+        from solver import *
+        from stl_main import *
+        from text_to_stl import *
+        from action_classes import *
+        from error_handling import *
+        from seq_reach_avoid_stay import *
+        # This is an automatically generated Python script
+        print("Hello from the new Python file!")
+        x = 5
+        y = 10
+        print(f"The sum of {x} and {y} is: {x + y}")
+        '''
+
+        self.create_and_run_python_file(file_name, content)
 
 
 
-# (eventually reach [] and always avoid [(t1 and t2)]) or (eventually reach t1 and eventually reach t2)
-# ((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))
+# print(declassify('((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))'))
+# print(declassify('(O₁ ∧ O₂)'))
+# print(declassify('(◊ T₁ ∨ ◊ T₂)'))
 
-# Simplify level 1: 
-# ((◊ T₁ ∨ ◊ T₂) ∧ (□ ¬ O₁ ∧ □ ¬ O₂))
+# final('((◊ T₁ ∨ ◊ T₂) ∧ (□ ¬ O₁ ∧ □ ¬ O₂))')
 
-# Simplify level 2: 
-# ((eventually reach T1 or eventually reach T2) and (always avoid O1 and always avoid O2))
+# final('see you (tomorrow), (bye)')
+# final('(tomorrow ∧ bye ∧ see)')
 
-# Simplify level 3:
-# stl = STL(1, SeqReachAvoidStay())
-# semantic = AND(1, OR(1, EVENTUALLY(1, REACH(stl, T1)).call(), EVENTUALLY(1, REACH(stl, T2)).call()).call(),
-#                     AND(1, ALWAYS(1, AVOID(stl, O1)).call(), ALWAYS(1, AVOID(stl, O2)).call()).call())
+#########################################
+
+
+
+# Define the classes (same as before)
+class REACH:
+    def __init__(self, id, start, end, setpoints):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.setpoints = setpoints
+
+    def call(self):
+        return f"REACH([{', '.join(map(str, self.setpoints))}])"
+
+
+class AVOID:
+    def __init__(self, id, start, end, setpoints):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.setpoints = setpoints
+
+    def call(self):
+        return f"AVOID([{', '.join(map(str, self.setpoints))}])"
+
+
+class EVENTUALLY:
+    def __init__(self, id, start, end, operation):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.operation = operation
+
+    def call(self):
+        return f"EVENTUALLY({self.id}, {self.start},{self.end} {self.operation})"
+
+
+class ALWAYS:
+    def __init__(self, id, start, end, operation):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.operation = operation
+
+    def call(self):
+        return f"ALWAYS({self.id}, {self.start},{self.end} {self.operation})"
+
+
+class OR:
+    def __init__(self, id, *operations):
+        self.id = id
+        self.operations = operations
+
+    def call(self):
+        return f"OR({self.id}, {', '.join(op.call() for op in self.operations)})"
+
+
+class AND:
+    def __init__(self, id, *operations):
+        self.id = id
+        self.operations = operations
+
+    def call(self):
+        return f"AND({self.id}, {', '.join(op.call() for op in self.operations)})"

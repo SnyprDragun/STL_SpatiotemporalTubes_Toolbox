@@ -1725,5 +1725,44 @@ def parse_expression(expression, id=1):
 # Example usage
 expression = 'AND[OR[EVENTUALLY T₁ , EVENTUALLY T₂] , AND[ALWAYS AVOID O₁ , ALWAYS AVOID O₂]]'
 parsed_output = parse_expression(expression)
-print(parsed_output)
+# print(parsed_output)
 
+import os
+import subprocess
+
+def create_and_run_python_file(file_name, content):
+    # Step 1: Create the Python file and write the content to it
+    with open(file_name, 'w') as f:
+        f.write(content)
+
+    print(f"{file_name} created successfully!")
+
+    # Step 2: Run the newly created Python file
+    try:
+        # For Windows: use 'python' instead of 'python3'
+        result = subprocess.run(['python3', file_name], capture_output=True, text=True)
+        print("Output of the script:")
+        print(result.stdout)
+        if result.stderr:
+            print("Errors:")
+            print(result.stderr)
+    except Exception as e:
+        print(f"Failed to run the script: {e}")
+
+# Example usage
+file_name = 'test_script.py'
+content = '''#!/opt/homebrew/bin/python3.11
+from solver import *
+from stl_main import *
+from text_to_stl import *
+from action_classes import *
+from error_handling import *
+from seq_reach_avoid_stay import *
+# This is an automatically generated Python script
+print("Hello from the new Python file!")
+x = 5
+y = 10
+print(f"The sum of {x} and {y} is: {x + y}")
+'''
+
+create_and_run_python_file(file_name, content)
