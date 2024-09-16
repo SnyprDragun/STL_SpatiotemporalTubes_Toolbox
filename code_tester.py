@@ -1499,28 +1499,148 @@
 ####################################
 
 
-def expression_within_bracket(exp):
-    open_indices = []
-    i_pos = 0
+# def expression_within_bracket(exp):
+#     open_indices = []
+#     i_pos = 0
     
-    while i_pos < len(exp):
-        if exp[i_pos] == '(':
-            open_indices.append(i_pos)
-        elif exp[i_pos] == ')' and open_indices:
-            open = open_indices.pop()
-            if check_parentheses(exp[open:i_pos+1]):
-                print("check: ", exp[open:i_pos+1])
-        i_pos += 1
+#     while i_pos < len(exp):
+#         if exp[i_pos] == '(':
+#             open_indices.append(i_pos)
+#         elif exp[i_pos] == ')' and open_indices:
+#             open = open_indices.pop()
+#             if check_parentheses(exp[open:i_pos+1]):
+#                 print("check: ", exp[open:i_pos+1])
+#                 convert(exp[open:i_pos+1])
+#         i_pos += 1
 
-def check_parentheses(s):
+# def check_parentheses(s):
+#     stack = []
+#     for char in s:
+#         if char == '(':
+#             stack.append(char)
+#         elif char == ')':
+#             if not stack:
+#                 return False
+#             stack.pop()
+#     return len(stack) == 0
+
+# def convert(exp):
+#     for i in exp:
+#         pass
+
+# expression_within_bracket('(see you (tomorrow), (bye), (tata(lmao)))')
+
+#########################################
+
+
+# def final(temp):
+#     exp = temp
+#     stack = []
+#     for i in range(len(exp)):
+#         for j in range (len(exp)):
+#             if exp[i] == '(' and exp[j] == ')' and '(' not in exp[i+1:j] and ')' not in exp[i+1:j] and exp[i+1:j] != '':
+#                 stack.append(exp[i:j+1])
+#     for item in stack:
+#         temp = temp.replace(item, 'x', 1)
+#     print(temp)
+#     if temp != 'x':
+#         final(temp)
+
+# final('(see you (tomorrow), (bye), (tata(lmao)))')
+
+#########################################
+
+def declassify(semantic):
+    i_pos = 0
+    count = 0
+    for i in semantic:
+        if i == '∧':
+            semantic = semantic.replace(i, ',')
+            semantic = 'AND[' + semantic[1:len(semantic) - 1] + ']'
+        if i == '∨':
+            semantic = semantic.replace(i, ',')
+            semantic = 'OR[' + semantic[1:len(semantic) - 1] + ']'
+        if i == '◊':
+            semantic = semantic.replace(i, 'EVENTUALLY')
+        if i == '□':
+            semantic = semantic.replace(i, 'ALWAYS')
+        if i == '¬':
+            semantic = semantic.replace(i, 'AVOID')
+    return semantic
+
+
+# print(declassify('((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))'))
+# print(declassify('(O₁ ∧ O₂)'))
+# print(declassify('(◊ T₁ ∨ ◊ T₂)'))
+
+
+def final(temp):
+    exp = temp
     stack = []
-    for char in s:
-        if char == '(':
-            stack.append(char)
-        elif char == ')':
-            if not stack:
-                return False
-            stack.pop()
-    return len(stack) == 0
+    for i in range(len(exp)):
+        for j in range (len(exp)):
+            if exp[i] == '(' and exp[j] == ')' and '(' not in exp[i+1:j] and ')' not in exp[i+1:j] and exp[i+1:j] != '':
+                stack.append(exp[i:j+1])
+    # print(stack)
+    for item in stack:
+        temp = temp.replace(item, declassify(item), 1)
+    print(temp)
+    if '∧' not in temp:
+        print(temp)
+        final_str = temp
+    else:
+        final(temp)
+    return final_str
 
-expression_within_bracket('(see you (tomorrow), (bye), (tata(lmao)))')
+# final('((◊ T₁ ∨ ◊ T₂) ∧ (□ ¬ O₁ ∧ □ ¬ O₂))')
+
+# final('see you (tomorrow), (bye)')
+# final('(tomorrow ∧ bye ∧ see)')
+
+#########################################
+
+import re
+
+def convert_logic_string(input_str, id):
+    # Define mappings for predicates
+    eventually_map = {
+        'T₁': '[0, 1]',
+        'T₂': '[2, 3]'
+    }
+
+    avoid_map = {
+        'O₁': '[5, 6]',
+        'O₂': '[0, 1]'
+    }
+
+    # Helper functions to handle replacements for EVENTUALLY and ALWAYS AVOID
+    def handle_eventually(match):
+        task = match.group(1).strip()
+        if task in eventually_map:
+            return f"EVENTUALLY({id}, 0,1 REACH({eventually_map[task]}]).call()"
+        return match.group(0)
+
+    def handle_always_avoid(match):
+        task = match.group(1).strip()
+        if task in avoid_map:
+            return f"ALWAYS({id}, 2,3 AVOID({avoid_map[task]}]).call()"
+        return match.group(0)
+
+    # Use regex to match EVENTUALLY and ALWAYS AVOID patterns and replace them
+    input_str = re.sub(r'EVENTUALLY\s+(\w₁|\w₂)', handle_eventually, input_str)
+    input_str = re.sub(r'ALWAYS\s+AVOID\s+(\w₁|\w₂)', handle_always_avoid, input_str)
+
+    # Replace AND and OR
+    input_str = input_str.replace('AND[', f"AND({id}, ")
+    input_str = input_str.replace('OR[', f"OR({id}, ")
+
+    # Replace brackets with parenthesis
+    input_str = input_str.replace(']', ')')
+
+    return input_str
+
+# Example usage:
+input_str = 'AND[OR[EVENTUALLY T₁ , EVENTUALLY T₂] , AND[ALWAYS AVOID O₁ , ALWAYS AVOID O₂]]'
+id = "id"
+output = convert_logic_string(input_str, id)
+print(output)
