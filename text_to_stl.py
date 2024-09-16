@@ -100,7 +100,6 @@ class TextToSTL():
 
         if len(stack) != 1:
             raise ValueError("Formula parsing error: incomplete or invalid formula.")
-
         return stack[0]
 
 # Example usage

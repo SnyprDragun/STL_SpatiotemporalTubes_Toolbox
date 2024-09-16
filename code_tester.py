@@ -1601,46 +1601,129 @@ def final(temp):
 
 import re
 
-def convert_logic_string(input_str, id):
-    # Define mappings for predicates
-    eventually_map = {
-        'T₁': '[0, 1]',
-        'T₂': '[2, 3]'
-    }
+# Define the classes (same as before)
+class REACH:
+    def __init__(self, id, start, end, setpoints):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.setpoints = setpoints
 
-    avoid_map = {
-        'O₁': '[5, 6]',
-        'O₂': '[0, 1]'
-    }
+    def call(self):
+        return f"REACH([{', '.join(map(str, self.setpoints))}])"
 
-    # Helper functions to handle replacements for EVENTUALLY and ALWAYS AVOID
-    def handle_eventually(match):
-        task = match.group(1).strip()
-        if task in eventually_map:
-            return f"EVENTUALLY({id}, 0,1 REACH({eventually_map[task]}]).call()"
-        return match.group(0)
 
-    def handle_always_avoid(match):
-        task = match.group(1).strip()
-        if task in avoid_map:
-            return f"ALWAYS({id}, 2,3 AVOID({avoid_map[task]}]).call()"
-        return match.group(0)
+class AVOID:
+    def __init__(self, id, start, end, setpoints):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.setpoints = setpoints
 
-    # Use regex to match EVENTUALLY and ALWAYS AVOID patterns and replace them
-    input_str = re.sub(r'EVENTUALLY\s+(\w₁|\w₂)', handle_eventually, input_str)
-    input_str = re.sub(r'ALWAYS\s+AVOID\s+(\w₁|\w₂)', handle_always_avoid, input_str)
+    def call(self):
+        return f"AVOID([{', '.join(map(str, self.setpoints))}])"
 
-    # Replace AND and OR
-    input_str = input_str.replace('AND[', f"AND({id}, ")
-    input_str = input_str.replace('OR[', f"OR({id}, ")
 
-    # Replace brackets with parenthesis
-    input_str = input_str.replace(']', ')')
+class EVENTUALLY:
+    def __init__(self, id, start, end, operation):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.operation = operation
 
-    return input_str
+    def call(self):
+        return f"EVENTUALLY({self.id}, {self.start},{self.end} {self.operation})"
 
-# Example usage:
-input_str = 'AND[OR[EVENTUALLY T₁ , EVENTUALLY T₂] , AND[ALWAYS AVOID O₁ , ALWAYS AVOID O₂]]'
-id = "id"
-output = convert_logic_string(input_str, id)
-print(output)
+
+class ALWAYS:
+    def __init__(self, id, start, end, operation):
+        self.id = id
+        self.start = start
+        self.end = end
+        self.operation = operation
+
+    def call(self):
+        return f"ALWAYS({self.id}, {self.start},{self.end} {self.operation})"
+
+
+class OR:
+    def __init__(self, id, *operations):
+        self.id = id
+        self.operations = operations
+
+    def call(self):
+        return f"OR({self.id}, {', '.join(op.call() for op in self.operations)})"
+
+
+class AND:
+    def __init__(self, id, *operations):
+        self.id = id
+        self.operations = operations
+
+    def call(self):
+        return f"AND({self.id}, {', '.join(op.call() for op in self.operations)})"
+
+
+# Map variables like T₁, O₁ to setpoints (index ranges)
+variable_map = {
+    'T₁': [0, 1],
+    'T₂': [2, 3],
+    'O₁': [5, 6],
+    'O₂': [0, 1]
+}
+
+# Helper function to parse and convert the string
+def parse_expression(expression, id=1):
+    # Remove whitespaces around brackets for cleaner parsing
+    expression = re.sub(r'\s*,\s*', ',', expression)  # Normalize commas
+    expression = re.sub(r'\s*\[\s*', '[', expression)  # Normalize brackets
+
+    def extract_arguments(inner_expr):
+        """Extracts arguments within brackets and returns them as a list."""
+        stack = []
+        result = []
+        temp = ""
+        for char in inner_expr:
+            if char == ',' and not stack:
+                result.append(temp.strip())
+                temp = ""
+            else:
+                temp += char
+                if char == '[':
+                    stack.append('[')
+                elif char == ']':
+                    stack.pop()
+        if temp:
+            result.append(temp.strip())
+        return result
+
+    # Recursively build the expression tree
+    def build_expression(expr, id):
+        # Match different operations
+        if expr.startswith("AND["):
+            args = extract_arguments(expr[4:-1])
+            return AND(id, *[build_expression(arg, id) for arg in args])
+        elif expr.startswith("OR["):
+            args = extract_arguments(expr[3:-1])
+            return OR(id, *[build_expression(arg, id) for arg in args])
+        elif expr.startswith("ALWAYS AVOID"):
+            args = extract_arguments(expr[12:-1])
+            start, end = 2, 3  # Set default or inferred values
+            setpoints = variable_map.get(args[0], [0])  # Map the argument to setpoints
+            return ALWAYS(id, start, end, AVOID(id, start, end, setpoints).call())
+        elif expr.startswith("EVENTUALLY"):
+            args = extract_arguments(expr[11:-1])
+            start, end = 0, 1  # Set default or inferred values
+            setpoints = variable_map.get(args[0], [0])  # Map the argument to setpoints
+            return EVENTUALLY(id, start, end, REACH(id, start, end, setpoints).call())
+        else:
+            raise ValueError(f"Unknown expression format: {expr}")
+
+    return build_expression(expression, id).call()
+
+
+# Example usage
+expression = 'AND[OR[EVENTUALLY T₁ , EVENTUALLY T₂] , AND[ALWAYS AVOID O₁ , ALWAYS AVOID O₂]]'
+parsed_output = parse_expression(expression)
+print(parsed_output)
+
