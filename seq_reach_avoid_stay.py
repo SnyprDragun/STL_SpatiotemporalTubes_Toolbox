@@ -149,9 +149,9 @@ class SeqReachAvoidStay():
 
         fig2 = plt.figure(2)
         dx = fig2.add_subplot(111, projection='3d')
-        dx.set_xlim(0, 5)
-        dx.set_ylim(0, 5)
-        dx.set_zlim(0, 5)
+        dx.set_xlim(0, 15)
+        dx.set_ylim(0, 15)
+        dx.set_zlim(0, 15)
         dx.set_xlabel('X Axis')
         dx.set_ylabel('Y Axis')
         dx.set_zlabel('Time Axis')

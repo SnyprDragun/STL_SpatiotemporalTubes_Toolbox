@@ -63,9 +63,8 @@ class OR(STL):
 
     def add_resultant(self):
         '''adds constraints'''
-        for constraints in self.instances:
-            choice = random.randint(0, len(constraints) - 1)
-            self.main.solver.add(constraints[choice])
+        choice = random.randint(0, len(self.instances) - 1)
+        self.main.solver.add(self.instances[choice])
 
     def return_resultant(self):
         '''returns constraints'''
