@@ -27,3 +27,5 @@ stl2.plotter()
 # need to add or constraints properly
 # the call() method has to be timed correctly
 # toolbox has zero error, i.e. all semantics must start from zero (plotting issue)
+# OR constraints are a mess, also need to handle for OR AND concatenation
+# dead
