@@ -53,6 +53,7 @@ class AND(STL):
 
 class OR(STL):
     def __init__(self, identifier, *instances):
+        self.choice = 0
         self.instances = instances
         self.return_value = True
         a_instance = STL.get_instance(identifier)
@@ -68,17 +69,16 @@ class OR(STL):
                 or_targets.append(instance.task.local_setpoint)
         print("ors: ", or_targets)
         goal = [14, 15, 14, 15]
-        print("Here: ", self.main.min_distance_element(or_targets, goal))
+        self.choice = or_targets.index(self.main.min_distance_element(or_targets, goal))
+        print("choice: ", self.choice)
 
     def add_resultant(self):
         '''adds constraints'''
-        choice = random.randint(0, len(self.instances) - 1)
-        self.main.solver.add(self.instances[choice].call())
+        self.main.solver.add(self.instances[self.choice].call())
 
     def return_resultant(self):
         '''returns constraints'''
-        choice = random.randint(0, len(self.instances) - 1)
-        return self.instances[choice].call()
+        return self.instances[self.choice].call()
 
     def call(self):
         self.decide_or()
