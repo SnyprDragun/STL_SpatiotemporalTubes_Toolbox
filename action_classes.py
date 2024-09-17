@@ -19,6 +19,7 @@ class REACH(TASK):
             self.x1 = x1
             self.x2 = x2
             self.callable = 1
+            self.local_setpoint = [self.x1, self.x2]
         elif x1 is not None and x2 is None:
             self.callable = 1.5
 
@@ -26,6 +27,7 @@ class REACH(TASK):
             self.y1 = y1
             self.y2 = y2
             self.callable = 2
+            self.local_setpoint = [self.x1, self.x2, self.y1, self.y2]
         elif y1 is not None and y2 is None:
             self.callable = 2.5
 
@@ -33,6 +35,7 @@ class REACH(TASK):
             self.z1 = z1
             self.z2 = z2
             self.callable = 3
+            self.local_setpoint = [self.x1, self.x2, self.y1, self.y2, self.z1, self.z2]
         elif z1 is not None and z2 is None:
             self.callable = 3.5
 

@@ -1822,5 +1822,22 @@ input_string_2 = "(x ∧ y)"
 output_1 = convert_to_logic_expression(input_string_1)
 output_2 = convert_to_logic_expression(input_string_2)
 
-print(f"Input: {input_string_1} -> Output: {output_1}")
-print(f"Input: {input_string_2} -> Output: {output_2}")
+# print(f"Input: {input_string_1} -> Output: {output_1}")
+# print(f"Input: {input_string_2} -> Output: {output_2}")
+
+import numpy as np
+
+def min_distance_element(arr, target):
+    min_distance = float('inf')
+    closest_element = None
+    for element in arr:
+        distance = np.linalg.norm(np.array(element) - target)
+        if distance < min_distance:
+            min_distance = distance
+            closest_element = element
+    return closest_element
+
+array = [[3, 4], [7, 8], [5, 10], [4, 3], [6, 10]]
+target = [5, 5]
+result = min_distance_element(array, target)
+print(f"Element closest to (5, 5): {result}")

@@ -61,6 +61,14 @@ class OR(STL):
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
 
+    def decide_or(self):
+        or_targets = []
+        for instance in self.instances:
+            if isinstance(instance, REACH):
+                or_targets.append(instance.task.local_setpoint)
+        goal = self.main.setpoints[-1]
+        print("Here: ", self.main.min_distance_element(or_targets, goal))
+
     def add_resultant(self):
         '''adds constraints'''
         choice = random.randint(0, len(self.instances) - 1)
@@ -68,11 +76,11 @@ class OR(STL):
 
     def return_resultant(self):
         '''returns constraints'''
-        for constraints in self.instances:
-            choice = random.randint(0, len(constraints) - 1)
-            self.main.solver.add(constraints[choice])
+        choice = random.randint(0, len(self.instances) - 1)
+        return self.instances[choice]
 
     def call(self):
+        self.decide_or()
         if self.return_value == True:
             self.return_resultant()
         else:

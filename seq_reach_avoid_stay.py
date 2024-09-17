@@ -401,6 +401,16 @@ class SeqReachAvoidStay():
             secs = k - (mins * 60) - (hrs * 60 * 60)
         print("Time taken: ", hrs , "hours, ", mins, "minutes, ", secs, "seconds")
 
+    def min_distance_element(self, target_array, goal):
+        min_distance = float('inf')
+        closest_element = None
+        for element in target_array:
+            distance = np.linalg.norm(np.array(element) - goal)
+            if distance < min_distance:
+                min_distance = distance
+                closest_element = element
+        return closest_element
+
     def getStart(self):
         return self._start
 
