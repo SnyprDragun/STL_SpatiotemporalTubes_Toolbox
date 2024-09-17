@@ -55,7 +55,7 @@ class OR(STL):
     def __init__(self, identifier, *instances):
         self.choice = 0
         self.instances = instances
-        self.return_value = True
+        self.return_value = False
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
@@ -129,10 +129,10 @@ class EVENTUALLY(STL):
     def call(self):
         all_constraints = self.task.checkCallableAndCallExecute()
         if self.return_value == True:
-            return z3.AtLeast(*all_constraints, 3)
+            return all_constraints
             # return all_constraints[random.randint(1, len(all_constraints) - 1)]
         else:
-            self.main.solver.add(z3.AtLeast(*all_constraints, 3))
+            self.main.solver.add(all_constraints)
 
 class ALWAYS(STL):
     def __init__(self, identifier, t1, t2, task):
