@@ -86,22 +86,21 @@ class TextToSTL():
                             }
 
     def declassify(self, semantic):
-        i_pos = 0
-        count = 0
-        for i in semantic:
-            if i == '∧':
-                semantic = semantic.replace(i, ',')
-                semantic = 'AND[' + semantic[1:len(semantic) - 1] + ']'
-            if i == '∨':
-                semantic = semantic.replace(i, ',')
-                semantic = 'OR[' + semantic[1:len(semantic) - 1] + ']'
-            if i == '◊':
-                semantic = semantic.replace(i, 'EVENTUALLY')
-            if i == '□':
-                semantic = semantic.replace(i, 'ALWAYS')
-            if i == '¬':
-                semantic = semantic.replace(i, 'AVOID')
-        return semantic
+        # Step 1: Remove parentheses and spaces
+        cleaned_string = semantic.strip().replace('(', '').replace(')', '').replace(' ', '')
+
+        # Step 2: Check the operator in the string and split accordingly
+        if '∨' in cleaned_string:
+            # If the operator is '*', split by '*' and use OR
+            variables = cleaned_string.split('∨')
+            return f"OR({', '.join(variables)})"
+        elif '∧' in cleaned_string:
+            # If the operator is '$', split by '$' and use AND
+            variables = cleaned_string.split('∧')
+            return f"AND({', '.join(variables)})"
+        else:
+            # If neither operator is found, return the input as-is or raise an error
+            return "Invalid input: No valid operator found (* or $)"
 
     def final(self, temp):
         exp = temp
@@ -211,9 +210,10 @@ obj = ''' + parsed_output
 
         self.create_and_run_python_file(file_name, content)
 
-TextToSTL('((◊ T₁ ∨ ◊ T₂) ∧ (□ ¬ O₁ ∧ □ ¬ O₂))').execute()
-# x1 = x.final(x.text)
-# print(x1)
+x = TextToSTL('((◊ T₁ ∨ ◊ T₂ ∨ ◊ T₃) ∧ (□ ¬ O₁ ∧ □ ¬ O₂ ∧ □ ¬ O₃))')
+
+x1 = x.final(x.text)
+print(x1)
 # parsed_output = x.parse_expression(x1)
 # print(parsed_output)
 # x.execute()

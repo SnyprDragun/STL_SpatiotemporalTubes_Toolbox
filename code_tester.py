@@ -1759,4 +1759,68 @@ y = 10
 print(f"The sum of {x} and {y} is: {x + y}")
 '''
 
-create_and_run_python_file(file_name, content)
+# create_and_run_python_file(file_name, content)
+
+
+
+
+
+# * = and
+# # = or
+# ^ = eventually
+# ! = always
+# @ = reach
+# & = avoid
+
+# input string: (x * y * z) -> output string: OR(x, y, z)
+# input string: (x * y) -> output string: OR(x, y)
+# do this for n arguments
+
+# import re
+
+# def convert_to_or(expression):
+#     if not re.fullmatch(r'[\w\s\+\*\(\)]+', expression):
+#         return "enter valid exp"
+    
+#     def replace_and_with_or(match):
+#         variables = match.group(1)
+#         return f"OR({variables.replace('*', ',')})"
+    
+#     expression = re.sub(r'\(([\w\*]+)\)', replace_and_with_or, expression)
+
+#     if re.search(r'\(\w+\*\w+', expression):
+#         return "enter valid bro"
+    
+#     return expression
+
+# expr = '(x * y * z)'
+# print(convert_to_or(expr))
+
+import re
+
+def convert_to_logic_expression(input_string):
+    # Step 1: Remove parentheses and spaces
+    cleaned_string = input_string.strip().replace('(', '').replace(')', '').replace(' ', '')
+
+    # Step 2: Check the operator in the string and split accordingly
+    if '∨' in cleaned_string:
+        # If the operator is '*', split by '*' and use OR
+        variables = cleaned_string.split('∨')
+        return f"OR({', '.join(variables)})"
+    elif '∧' in cleaned_string:
+        # If the operator is '$', split by '$' and use AND
+        variables = cleaned_string.split('∧')
+        return f"AND({', '.join(variables)})"
+    else:
+        # If neither operator is found, return the input as-is or raise an error
+        return "Invalid input: No valid operator found (* or $)"
+
+# Example usage
+input_string_1 = "(◊ T₁ ∨ ◊ T₂ ∨ ◊ T₃)"
+input_string_2 = "(x ∧ y)"
+
+output_1 = convert_to_logic_expression(input_string_1)
+output_2 = convert_to_logic_expression(input_string_2)
+
+print(f"Input: {input_string_1} -> Output: {output_1}")
+print(f"Input: {input_string_2} -> Output: {output_2}")
