@@ -405,7 +405,7 @@ class SeqReachAvoidStay():
         min_distance = float('inf')
         closest_element = None
         for element in target_array:
-            distance = np.linalg.norm(np.array(element) - goal)
+            distance = np.linalg.norm(np.array(element) - np.array(goal))
             if distance < min_distance:
                 min_distance = distance
                 closest_element = element

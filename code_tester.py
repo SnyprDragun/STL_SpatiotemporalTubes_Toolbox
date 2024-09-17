@@ -1840,4 +1840,5 @@ def min_distance_element(arr, target):
 array = [[3, 4], [7, 8], [5, 10], [4, 3], [6, 10]]
 target = [5, 5]
 result = min_distance_element(array, target)
-print(f"Element closest to (5, 5): {result}")
+# print(f"Element closest to (5, 5): {result}")
+print(array[0:-2])

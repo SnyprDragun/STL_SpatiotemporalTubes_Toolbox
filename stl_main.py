@@ -64,20 +64,21 @@ class OR(STL):
     def decide_or(self):
         or_targets = []
         for instance in self.instances:
-            if isinstance(instance, REACH):
+            if isinstance(instance.task, REACH):
                 or_targets.append(instance.task.local_setpoint)
-        goal = self.main.setpoints[-1]
+        print("ors: ", or_targets)
+        goal = [14, 15, 14, 15]
         print("Here: ", self.main.min_distance_element(or_targets, goal))
 
     def add_resultant(self):
         '''adds constraints'''
         choice = random.randint(0, len(self.instances) - 1)
-        self.main.solver.add(self.instances[choice])
+        self.main.solver.add(self.instances[choice].call())
 
     def return_resultant(self):
         '''returns constraints'''
         choice = random.randint(0, len(self.instances) - 1)
-        return self.instances[choice]
+        return self.instances[choice].call()
 
     def call(self):
         self.decide_or()

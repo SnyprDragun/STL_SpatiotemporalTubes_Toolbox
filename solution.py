@@ -13,9 +13,9 @@ stl2 = STL(1, SeqReachAvoidStay(3, 2, 0.05, 1))
 
 
 obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), 
-            EVENTUALLY(1, 3, 4, REACH(stl2.main, 3, 4, 11, 12)).call(),
-            OR(1, EVENTUALLY(1, 11, 12, REACH(stl2.main, 11, 12, 3, 4)).call(),
-            EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call(), 
+        # OR(1, EVENTUALLY(1, 3, 4, REACH(stl2.main, 3, 4, 11, 12)),
+        #     EVENTUALLY(1, 11, 12, REACH(stl2.main, 9, 10, 9, 10))).call(),
+            EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call(), 
             ALWAYS(1, 7, 8, AVOID(stl2.main, 7, 8, 7, 8)).call()).call()
 
 
