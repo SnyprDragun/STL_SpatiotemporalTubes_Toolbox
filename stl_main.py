@@ -74,11 +74,13 @@ class OR(STL):
 
     def add_resultant(self):
         '''adds constraints'''
-        self.main.solver.add(self.instances[self.choice].call())
+        constraints = self.instances[self.choice].call()
+        self.main.solver.add(constraints)
 
     def return_resultant(self):
         '''returns constraints'''
-        return self.instances[self.choice].call()
+        constraints = self.instances[self.choice].call()
+        return constraints
 
     def call(self):
         self.decide_or()
@@ -130,7 +132,6 @@ class EVENTUALLY(STL):
         all_constraints = self.task.checkCallableAndCallExecute()
         if self.return_value == True:
             return all_constraints
-            # return all_constraints[random.randint(1, len(all_constraints) - 1)]
         else:
             self.main.solver.add(all_constraints)
 

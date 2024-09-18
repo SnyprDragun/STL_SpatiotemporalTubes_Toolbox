@@ -263,6 +263,7 @@ class SeqReachAvoidStay():
 
         else:
             print("No solution found.")
+            print("range: ", self.getRange(), "\nstart: ", self.getStart(), "\nfinish: ", self.getFinish(), "\nstep: ", self._step)
             end = time.time()
             self.displayTime(start, end)
 
