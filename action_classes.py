@@ -49,22 +49,29 @@ class REACH(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        match self.callable:
-            case 1:
-                return self.execute_reach_1D()
-            case 1.5:
-                print("Error: Must enter both values for X")
-            case 2:
-                return self.execute_reach_2D()
-            case 2.5:
-                print("Error: Must enter both values for Y")
-            case 3:
-                return self.execute_reach_3D()
-            case 3.5:
-                print("Error: Must enter both values for Z")
-            case default:
-                print("Error: Must enter ", 2 * self.main.dimension, "values for degree ", self.main.dimension, 
-                    ". Currently have mismatch.")
+        # match self.callable:
+        #     case 1:
+        #         return self.execute_reach_1D()
+        #     case 1.5:
+        #         print("Error: Must enter both values for X")
+        #     case 2:
+        #         return self.execute_reach_2D()
+        #     case 2.5:
+        #         print("Error: Must enter both values for Y")
+        #     case 3:
+        #         return self.execute_reach_3D()
+        #     case 3.5:
+        #         print("Error: Must enter both values for Z")
+        #     case default:
+        #         print("Error: Must enter ", 2 * self.main.dimension, "values for degree ", self.main.dimension, 
+        #             ". Currently have mismatch.")
+
+        if self.callable == 1:
+            return self.execute_reach_1D()
+        elif self.callable == 2:
+            return self.execute_reach_2D()
+        else:
+            return self.execute_reach_3D()
 
     def execute_reach_1D(self):
         self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
@@ -196,21 +203,28 @@ class AVOID(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        match self.callable:
-            case 1:
-                return self.execute_avoid_1D()
-            case 1.5:
-                print("Error: Must enter both values for X")
-            case 2:
-                return self.execute_avoid_2D()
-            case 2.5:
-                print("Error: Must enter both values for Y")
-            case 3:
-                return self.execute_avoid_3D()
-            case 3.5:
-                print("Error: Must enter both values for Z")
-            case default:
-                print("Error: Must enter proper values")
+        # match self.callable:
+        #     case 1:
+        #         return self.execute_avoid_1D()
+        #     case 1.5:
+        #         print("Error: Must enter both values for X")
+        #     case 2:
+        #         return self.execute_avoid_2D()
+        #     case 2.5:
+        #         print("Error: Must enter both values for Y")
+        #     case 3:
+        #         return self.execute_avoid_3D()
+        #     case 3.5:
+        #         print("Error: Must enter both values for Z")
+        #     case default:
+        #         print("Error: Must enter proper values")
+
+        if self.callable == 1:
+            return self.execute_avoid_1D()
+        elif self.callable == 2:
+            return self.execute_avoid_2D()
+        else:
+            return self.execute_avoid_3D()
 
     def execute_avoid_1D(self):
         self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
@@ -341,21 +355,28 @@ class STAY(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        match self.callable:
-            case 1:
-                return self.execute_stay_1D()
-            case 1.5:
-                print("Error: Must enter both values for X")
-            case 2:
-                return self.execute_stay_2D()
-            case 2.5:
-                print("Error: Must enter both values for Y")
-            case 3:
-                return self.execute_stay_3D()
-            case 3.5:
-                print("Error: Must enter both values for Z")
-            case default:
-                print("Error: Must enter proper values")
+        # match self.callable:
+        #     case 1:
+        #         return self.execute_stay_1D()
+        #     case 1.5:
+        #         print("Error: Must enter both values for X")
+        #     case 2:
+        #         return self.execute_stay_2D()
+        #     case 2.5:
+        #         print("Error: Must enter both values for Y")
+        #     case 3:
+        #         return self.execute_stay_3D()
+        #     case 3.5:
+        #         print("Error: Must enter both values for Z")
+        #     case default:
+        #         print("Error: Must enter proper values")
+
+        if self.callable == 1:
+            return self.execute_stay_1D()
+        elif self.callable == 2:
+            return self.execute_stay_2D()
+        else:
+            return self.execute_stay_3D()
 
     def execute_stay_1D(self):
         self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
