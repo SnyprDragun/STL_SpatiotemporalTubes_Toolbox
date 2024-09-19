@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/python3.11
+#!/usr/bin/env python3
 '''script to test STL specifications'''
 from solver import *
 from stl_main import *

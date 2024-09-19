@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/python3.11
+#!/usr/bin/env python3
 '''script for robust sequential reach-avoid-stay STL specifications'''
 import z3
 import time

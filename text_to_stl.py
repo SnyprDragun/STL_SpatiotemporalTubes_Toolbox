@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/python3.11
+#!/usr/bin/env python3
 '''script to convert stl semantic to executable form'''
 import os
 import re
@@ -194,7 +194,7 @@ class TextToSTL():
 
         # Example usage
         file_name = 'test_script.py'
-        content = '''#!/opt/homebrew/bin/python3.11
+        content = '''#!/usr/bin/env python3
 # This is an automatically generated Python script
 from solver import *
 from stl_main import *
