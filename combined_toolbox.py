@@ -528,23 +528,6 @@ class REACH(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        # match self.callable:
-        #     case 1:
-        #         return self.execute_reach_1D()
-        #     case 1.5:
-        #         print("Error: Must enter both values for X")
-        #     case 2:
-        #         return self.execute_reach_2D()
-        #     case 2.5:
-        #         print("Error: Must enter both values for Y")
-        #     case 3:
-        #         return self.execute_reach_3D()
-        #     case 3.5:
-        #         print("Error: Must enter both values for Z")
-        #     case default:
-        #         print("Error: Must enter ", 2 * self.main.dimension, "values for degree ", self.main.dimension, 
-        #             ". Currently have mismatch.")
-
         if self.callable == 1:
             return self.execute_reach_1D()
         elif self.callable == 2:
@@ -682,22 +665,6 @@ class AVOID(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        # match self.callable:
-        #     case 1:
-        #         return self.execute_avoid_1D()
-        #     case 1.5:
-        #         print("Error: Must enter both values for X")
-        #     case 2:
-        #         return self.execute_avoid_2D()
-        #     case 2.5:
-        #         print("Error: Must enter both values for Y")
-        #     case 3:
-        #         return self.execute_avoid_3D()
-        #     case 3.5:
-        #         print("Error: Must enter both values for Z")
-        #     case default:
-        #         print("Error: Must enter proper values")
-
         if self.callable == 1:
             return self.execute_avoid_1D()
         elif self.callable == 2:
@@ -834,22 +801,6 @@ class STAY(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        # match self.callable:
-        #     case 1:
-        #         return self.execute_stay_1D()
-        #     case 1.5:
-        #         print("Error: Must enter both values for X")
-        #     case 2:
-        #         return self.execute_stay_2D()
-        #     case 2.5:
-        #         print("Error: Must enter both values for Y")
-        #     case 3:
-        #         return self.execute_stay_3D()
-        #     case 3.5:
-        #         print("Error: Must enter both values for Z")
-        #     case default:
-        #         print("Error: Must enter proper values")
-
         if self.callable == 1:
             return self.execute_stay_1D()
         elif self.callable == 2:
@@ -1355,9 +1306,9 @@ stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
 #     stl2.main.solver.add(i)
 
 obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), 
-               EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)).call(),
-               EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)).call(),
-               EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call()
+            EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)).call(),
+            EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)).call(),
+            EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call()
 
 
 # obj3 = AND(1, EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call()
