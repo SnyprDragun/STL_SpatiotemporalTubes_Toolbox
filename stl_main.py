@@ -53,7 +53,7 @@ class AND(STL):
 
 class OR(STL):
     def __init__(self, identifier, *instances):
-        self.choice = 0
+        self.choice = 1
         self.instances = instances
         self.return_value = False
         a_instance = STL.get_instance(identifier)
@@ -62,32 +62,45 @@ class OR(STL):
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
 
-    def decide_or(self):
-        or_targets = []
+    def call1(self):
+        print("call1")
+        reach_or_targets = []
+        avoid_or_targets = []
+        stay_or_targets = []
+        
         for instance in self.instances:
             if isinstance(instance.task, REACH):
-                or_targets.append(instance.task.local_setpoint)
-        print("ors: ", or_targets)
+                reach_or_targets.append(instance.task.local_setpoint)
+            if isinstance(instance.task, AVOID):
+                avoid_or_targets.append(instance.task.local_obstacle)
+            if isinstance(instance.task, STAY):
+                stay_or_targets.append(instance.task.local_setpoint)
+
+        ###### only handling reach now
+        print("ors: ", reach_or_targets)
         goal = [14, 15, 14, 15]
-        self.choice = or_targets.index(self.main.min_distance_element(or_targets, goal))
+        self.choice = reach_or_targets.index(self.main.min_distance_element(reach_or_targets, goal))
         print("choice: ", self.choice)
 
-    def add_resultant(self):
-        '''adds constraints'''
-        constraints = self.instances[self.choice].call()
-        self.main.solver.add(constraints)
-
-    def return_resultant(self):
-        '''returns constraints'''
-        constraints = self.instances[self.choice].call()
-        return constraints
-
-    def call(self):
-        self.decide_or()
         if self.return_value == True:
-            self.return_resultant()
+            constraints = self.instances[self.choice].call()
+            return constraints
         else:
-            self.add_resultant()
+            constraints = self.instances[self.choice].task.checkCallableAndCallExecute()
+            self.main.solver.add(constraints)
+
+    def call2(self):
+        print("call2")
+        self.choice = random.randint(0, len(self.instances) - 1)
+        print(self.choice)
+
+        if self.return_value == True:
+            constraints = self.instances[self.choice]
+            return constraints
+        else:
+            constraints = self.instances[self.choice]
+            self.main.solver.add(constraints)
+
 
 class NOT(STL):
     def __init__(self, identifier, *instances):

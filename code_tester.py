@@ -1840,5 +1840,36 @@ def min_distance_element(arr, target):
 array = [[3, 4], [7, 8], [5, 10], [4, 3], [6, 10]]
 target = [5, 5]
 result = min_distance_element(array, target)
-print(f"Element closest to (5, 5): {result}")
-print(array[0:-2])
+# print(f"Element closest to (5, 5): {result}")
+# print(array[0:-2])
+
+import random
+
+class reach():
+    def r(self):
+        k = random.randint(10, 100)
+        print("reach: ", k)
+        return k
+    
+    def call(self):
+        return self.r()
+
+class even():
+    def __init__(self, task):
+        self.task = task
+
+class Or():
+    def __init__(self, *args):
+        self.args = args
+        
+    def decide(self):
+        choice = random.randint(0, len(self.args) - 1)
+        print("choice: ", choice)
+        # Create an instance of the task class before calling the method
+        instance = self.args[choice].task.call() # Create an instance of `reach`
+        print(instance)
+        return instance  # Call the method on the instance
+    
+# Create the Or object and decide
+j = Or(even(reach()), even(reach()), even(reach()), even(reach())).decide()
+print("j = ", j)

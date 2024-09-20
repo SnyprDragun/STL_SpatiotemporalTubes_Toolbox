@@ -6,7 +6,7 @@ from action_classes import *
 from error_handling import *
 from seq_reach_avoid_stay import *
 
-stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
+stl2 = STL(1, SeqReachAvoidStay(3, 2, 0.05, 1))
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3)).call()).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3)).call()).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3)).call()).call()
@@ -30,10 +30,22 @@ stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
 #     # for j in i:
 #     stl2.main.solver.add(i)
 
-obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), 
-               EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)).call(),
-               EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)).call(),
-               EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call()
+# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), 
+#                EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)).call(),
+#                EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)).call(),
+#                EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call()
+
+## doesnt work
+# OR(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
+#         # EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)),
+#         # EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)),
+#         EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15))).call1()
+
+## works
+# obj2 = OR(1, EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)).call(), 
+#         # EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)).call(),
+#         # EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)).call(),
+#         EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call2()
 
 
 # obj3 = AND(1, EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call()
