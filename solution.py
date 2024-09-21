@@ -6,7 +6,7 @@ from action_classes import *
 from error_handling import *
 from seq_reach_avoid_stay import *
 
-stl2 = STL(1, SeqReachAvoidStay(6, 2, 0.05, 1))
+stl2 = STL(1, SeqReachAvoidStay(10, 2, 0.05, 1))
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3)).call()).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3)).call()).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3)).call()).call()
@@ -65,4 +65,25 @@ stl2.plotter()
 # the call() method has to be timed correctly
 # toolbox has zero error, i.e. all semantics must start from zero (plotting issue)
 # OR constraints are a mess, also need to handle for OR AND concatenation
-# dead
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #####        #####       #####       #######
+   ##   ##      ##   ##      ##  ##      ##  
+  ##           ##     ##     ##   ##     #### 
+  ##           ##     ##     ##   ##     ####
+   ##   ##      ##   ##      ##  ##      ## 
+    #####        #####       #####       #######
+
+# RUNNING!!!!!!!
