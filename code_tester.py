@@ -1871,5 +1871,15 @@ class Or():
         return instance  # Call the method on the instance
     
 # Create the Or object and decide
-j = Or(even(reach()), even(reach()), even(reach()), even(reach())).decide()
-print("j = ", j)
+# j = Or(even(reach()), even(reach()), even(reach()), even(reach())).decide()
+# print("j = ", j)
+
+
+
+class A():
+    def ret(self):
+        return 5
+
+a = A()
+b = a.ret()
+print(type(b))

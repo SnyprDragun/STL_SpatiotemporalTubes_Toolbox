@@ -219,3 +219,10 @@ print(x1)
 # x.execute()
 
 # final('((◊ T₁ ∨ ◊ T₂) ∧ (□ ¬ O₁ ∧ □ ¬ O₂))')
+
+
+
+############################ tasks:
+# 1. Handle always eventually (loop eventually in always time frame)
+# 2. Handle eventually always (stay, might circle around in same position or like climb up with time)
+# 3. Handle global [goal] for OR cases

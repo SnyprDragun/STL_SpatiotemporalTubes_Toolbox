@@ -53,7 +53,7 @@ class AND(STL):
 
 class OR(STL):
     def __init__(self, identifier, *instances):
-        self.choice = 1
+        self.choice = None
         self.instances = instances
         self.return_value = False
         a_instance = STL.get_instance(identifier)
@@ -62,8 +62,7 @@ class OR(STL):
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
 
-    def call1(self):
-        print("call1")
+    def call(self):
         reach_or_targets = []
         avoid_or_targets = []
         stay_or_targets = []
@@ -77,8 +76,8 @@ class OR(STL):
                 stay_or_targets.append(instance.task.local_setpoint)
 
         ###### only handling reach now
-        print("ors: ", reach_or_targets)
-        goal = [14, 15, 14, 15]
+        print("OR case options: ", reach_or_targets)
+        goal = [13, 14, 13, 14]
         self.choice = reach_or_targets.index(self.main.min_distance_element(reach_or_targets, goal))
         print("choice: ", self.choice)
 
@@ -86,19 +85,7 @@ class OR(STL):
             constraints = self.instances[self.choice].call()
             return constraints
         else:
-            constraints = self.instances[self.choice].task.checkCallableAndCallExecute()
-            self.main.solver.add(constraints)
-
-    def call2(self):
-        print("call2")
-        self.choice = random.randint(0, len(self.instances) - 1)
-        print(self.choice)
-
-        if self.return_value == True:
-            constraints = self.instances[self.choice]
-            return constraints
-        else:
-            constraints = self.instances[self.choice]
+            constraints = self.instances[self.choice].call()
             self.main.solver.add(constraints)
 
 
