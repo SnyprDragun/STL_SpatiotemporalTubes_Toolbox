@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/python3.11
+#!/usr/bin/env python3
 '''script for Z3 Solver'''
 import z3
 import numpy as np
