@@ -149,9 +149,9 @@ class SeqReachAvoidStay():
 
         fig2 = plt.figure(2)
         dx = fig2.add_subplot(111, projection='3d')
-        dx.set_xlim(0, 15)
-        dx.set_ylim(0, 15)
-        dx.set_zlim(0, 15)
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
         dx.set_xlabel('X Axis')
         dx.set_ylabel('Y Axis')
         dx.set_zlabel('Time Axis')
@@ -243,7 +243,7 @@ class SeqReachAvoidStay():
             Coeffs = []
             C_fin = np.zeros((2 * self.dimension) * (self.degree + 1))
             for i in range(len(self.C)):
-                xi[i] = (float(model[self.C[i]].numerator().as_long()))/(float(model[self.C[i]].denominator().as_long()))
+                xi[i] = (np.float128(model[self.C[i]].numerator().as_long()))/(np.float128(model[self.C[i]].denominator().as_long()))
                 print("{} = {}".format(self.C[i], xi[i]))
                 Coeffs.append(xi[i])
 
