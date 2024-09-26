@@ -450,13 +450,14 @@ class SeqReachAvoidStay():
 
     def displayTime(self, start, end):
         k = int(end - start)
-        hrs = k // 3600
+        days = k // (3600 * 24)
+        hrs = (k // 3600) - (days * 24)
         mins = (k // 60) - (hrs * 60)
         if end - start < 1:
             secs = (((end - start) * 10000) // 100) / 100
         else:
-            secs = k - (mins * 60) - (hrs * 60 * 60)
-        print("Time taken: ", hrs , "hours, ", mins, "minutes, ", secs, "seconds")
+            secs = k - (mins * 60) - (hrs * 3600) - (days * 24 * 3600)
+        print("Time taken: ", days, "days", hrs , "hours, ", mins, "minutes, ", secs, "seconds")
 
     def min_distance_element(self, target_array, goal):
         min_distance = float('inf')
