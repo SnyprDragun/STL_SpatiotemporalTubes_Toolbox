@@ -6,7 +6,7 @@ from action_classes import *
 from error_handling import *
 from seq_reach_avoid_stay import *
 
-stl2 = STL(1, SeqReachAvoidStay(2, 2, 0.05, 1))
+stl2 = STL(1, SeqReachAvoidStay(3, 2, 0.05, 1))
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3)).call()).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3)).call()).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3)).call()).call()
@@ -84,7 +84,7 @@ stl2 = STL(1, SeqReachAvoidStay(2, 2, 0.05, 1))
 #                # EVENTUALLY(1, 4, 5, REACH(stl2.main, 4, 5, 5, 6)).call(),
 #                EVENTUALLY(1, 4, 5, REACH(stl2.main, 6, 7, 5, 6)).call(),
 #                EVENTUALLY(1, 10, 11, REACH(stl2.main, 9, 10, 9, 10)).call(),
-#                ALWAYS(1, 4, 6, AVOID(stl2.main, 5, 6, 2, 6)).call()
+#             #    ALWAYS(1, 4, 6, AVOID(stl2.main, 5, 6, 2, 6)).call()
 #             ).call()
 
 

@@ -129,9 +129,18 @@ class SeqReachAvoidStay():
         x_u = np.zeros(self.getRange())
         x_l = np.zeros(self.getRange())
 
+        gd_xu = np.zeros(self.getRange())
+        gd_xl = np.zeros(self.getRange())
+
         for i in range(self.getRange()):
             x_u[i] = self.real_gammas(i * self._step, C_fin)[1]
             x_l[i] = self.real_gammas(i * self._step, C_fin)[0]
+
+            gd_xu[i] = self.real_gamma_dot(i * self._step, C_fin)[1]
+            gd_xl[i] = self.real_gamma_dot(i * self._step, C_fin)[0]
+        
+        print("gamma_dot for x_upper max = ", max(gd_xu))
+        print("gamma_dot for x_lower max = ", max(gd_xl))
 
         fig, axs = plt.subplots(1, 1, figsize=(8, 8), constrained_layout=True)
         ax = axs
@@ -155,11 +164,26 @@ class SeqReachAvoidStay():
         y_u = np.zeros(self.getRange())
         y_l = np.zeros(self.getRange())
 
+        gd_xu = np.zeros(self.getRange())
+        gd_xl = np.zeros(self.getRange())
+        gd_yu = np.zeros(self.getRange())
+        gd_yl = np.zeros(self.getRange())
+
         for i in range(self.getRange()):
             x_u[i] = self.real_gammas(i * self._step, C_fin)[2]
             x_l[i] = self.real_gammas(i * self._step, C_fin)[0]
             y_u[i] = self.real_gammas(i * self._step, C_fin)[3]
             y_l[i] = self.real_gammas(i * self._step, C_fin)[1]
+
+            gd_xu[i] = self.real_gamma_dot(i * self._step, C_fin)[2]
+            gd_xl[i] = self.real_gamma_dot(i * self._step, C_fin)[0]
+            gd_yu[i] = self.real_gamma_dot(i * self._step, C_fin)[3]
+            gd_yl[i] = self.real_gamma_dot(i * self._step, C_fin)[1]
+
+        print("gamma_dot for x_upper max = ", max(gd_xu))
+        print("gamma_dot for x_lower max = ", max(gd_xl))
+        print("gamma_dot for y_upper max = ", max(gd_yu))
+        print("gamma_dot for y_lower max = ", max(gd_yl))
 
         fig, axs = plt.subplots(2, 1, figsize=(8, 8), constrained_layout=True)
         ax, bx = axs
@@ -226,6 +250,13 @@ class SeqReachAvoidStay():
         z_u = np.zeros(self.getRange())
         z_l = np.zeros(self.getRange())
 
+        gd_xu = np.zeros(self.getRange())
+        gd_xl = np.zeros(self.getRange())
+        gd_yu = np.zeros(self.getRange())
+        gd_yl = np.zeros(self.getRange())
+        gd_zu = np.zeros(self.getRange())
+        gd_zl = np.zeros(self.getRange())
+
         for i in range(self.getRange()):
             x_u[i] = self.real_gammas(i * self._step, C_fin)[3]
             x_l[i] = self.real_gammas(i * self._step, C_fin)[0]
@@ -233,6 +264,20 @@ class SeqReachAvoidStay():
             y_l[i] = self.real_gammas(i * self._step, C_fin)[1]
             z_u[i] = self.real_gammas(i * self._step, C_fin)[5]
             z_l[i] = self.real_gammas(i * self._step, C_fin)[2]
+
+            gd_xu[i] = self.real_gamma_dot(i * self._step, C_fin)[3]
+            gd_xl[i] = self.real_gamma_dot(i * self._step, C_fin)[0]
+            gd_yu[i] = self.real_gamma_dot(i * self._step, C_fin)[4]
+            gd_yl[i] = self.real_gamma_dot(i * self._step, C_fin)[1]
+            gd_zu[i] = self.real_gamma_dot(i * self._step, C_fin)[5]
+            gd_zl[i] = self.real_gamma_dot(i * self._step, C_fin)[2]
+
+        print("gamma_dot for x_upper max = ", max(gd_xu))
+        print("gamma_dot for x_lower max = ", max(gd_xl))
+        print("gamma_dot for y_upper max = ", max(gd_yu))
+        print("gamma_dot for y_lower max = ", max(gd_yl))
+        print("gamma_dot for z_upper max = ", max(gd_zu))
+        print("gamma_dot for z_lower max = ", max(gd_zl))
 
         fig1, axs = plt.subplots(3, 1, figsize=(8, 8), constrained_layout=True)
         ax, bx, cx = axs
