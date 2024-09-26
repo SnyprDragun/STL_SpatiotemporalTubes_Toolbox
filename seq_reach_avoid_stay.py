@@ -50,12 +50,28 @@ class SeqReachAvoidStay():
         '''method to calculate tube equations'''
         real_tubes = np.zeros(2 * self.dimension)
 
-        for i in range(2 * self.dimension): #for 4 tube equations
+        for i in range(2 * self.dimension):
             power = 0
             for j in range(self.degree + 1): #each tube eq has {degree+1} terms
                 real_tubes[i] += ((C_fin[j + i * (self.degree + 1)]) * (t ** power))
                 power += 1
         return real_tubes
+
+    def gamma_dot(self, t):
+        '''method to calculate tube equations'''
+        tubes = [z3.Real(f'g_{i}') for i in range(2 * self.dimension)]
+
+        for i in range(2 * self.dimension):
+            tubes[i] = 0
+            power = 0
+            for j in range(self.degree + 1):
+                if power < 1:
+                    tubes[i] += 0
+                    power += 1
+                else:
+                    tubes[i] += power * ((self.C[j + i * (self.degree + 1)]) * (t ** (power - 1)))
+                    power += 1
+        return tubes
 
     def general(self):
         '''method for general specifications'''
@@ -66,6 +82,10 @@ class SeqReachAvoidStay():
                 gamma1_U = self.gammas(t)[1]
                 constraint_x = z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness)
                 self.solver.add(constraint_x)
+                
+                x_gamma_dot = (self.gamma_dot(t)[0] + self.gamma_dot(t)[1]) / 2
+                self.solver.add(x_gamma_dot < 10000000)
+
             if self.dimension == 2:
                 gamma1_L = self.gammas(t)[0]
                 gamma2_L = self.gammas(t)[1]
@@ -198,7 +218,7 @@ class SeqReachAvoidStay():
             z_u[i] = self.real_gammas(i * self._step, C_fin)[5]
             z_l[i] = self.real_gammas(i * self._step, C_fin)[2]
 
-        fig, axs = plt.subplots(3, 1, figsize=(8, 8), constrained_layout=True)
+        fig1, axs = plt.subplots(3, 1, figsize=(8, 8), constrained_layout=True)
         ax, bx, cx = axs
         for i in self.setpoints:        # t1  x1/y1/z1  t2    t1  x2/y2/z2  x1
             square_x = patches.Rectangle((i[6], i[0]), i[7] - i[6], i[1] - i[0], edgecolor='green', facecolor='none')
@@ -225,9 +245,45 @@ class SeqReachAvoidStay():
         bx.plot(t, y_l)
         cx.plot(t, z_u)
         cx.plot(t, z_l)
-        ax.set_title("First Subplot")
-        bx.set_title("Second Subplot")
-        cx.set_title("Third Subplot")
+        ax.set_title("t vs x")
+        bx.set_title("t vs y")
+        cx.set_title("t vs z")
+
+        # --------------------------------------------------- 3D PLOT --------------------------------------------------- #
+        fig2 = plt.figure(2, figsize=(10, 8))
+        dx = fig2.add_subplot(111, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Z Axis')
+
+        for i in range(self.getRange()):
+            vertices = [[x_u[i], y_u[i], z_u[i]], [x_l[i], y_u[i], z_u[i]], [x_l[i], y_l[i], z_u[i]], [x_u[i], y_l[i], z_u[i]],
+                        [x_u[i], y_u[i], z_l[i]], [x_l[i], y_u[i], z_l[i]], [x_l[i], y_l[i], z_l[i]], [x_u[i], y_l[i], z_l[i]]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                        [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                        [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                        [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                        [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                        [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
+
+        print("x_u: ", x_u)
+        print("x_l: ", x_l)
+        print("y_u: ", y_u)
+        print("y_l: ", y_l)
+        print("z_u: ", z_u)
+        print("z_l: ", z_l)
 
     def find_solution(self):
         '''method to plot the tubes'''

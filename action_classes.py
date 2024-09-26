@@ -134,6 +134,8 @@ class REACH(TASK):
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
+        lambda_low = 0
+        lambda_high = 1
         for t in t_values:
             # for lambda_1 in self.main.lambda_values:
             #     for lambda_2 in self.main.lambda_values:
@@ -162,6 +164,22 @@ class REACH(TASK):
             z = (lambda_ * gamma3_L + (1 - lambda_) * gamma3_U)
             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
             all_constraints.append(constraint)
+
+            # x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            # y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            # z_low = (lambda_low * gamma3_L + (1 - lambda_low) * gamma3_U)
+
+            # x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            # y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            # z_high = (lambda_high * gamma3_L + (1 - lambda_high) * gamma3_U)
+
+            # constraint_low = z3.And(x_low<self.x2, x_low>self.x1, y_low<self.y2, y_low>self.y1, z_low<self.z2, z_low>self.z1)
+            # constraint_high = z3.And(x_high<self.x2, x_high>self.x1, y_high<self.y2, y_high>self.y1, z_high<self.z2, z_high>self.z1)
+
+            # all_constraints.append(constraint_low)
+            # all_constraints.append(constraint_high)
+
+
         print("Added Reach Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
