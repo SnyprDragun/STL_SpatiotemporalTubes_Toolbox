@@ -124,7 +124,7 @@ class REACH(TASK):
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
-    
+
     def execute_reach_1D_depth_full(self):
         self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
         all_constraints = []
@@ -237,7 +237,7 @@ class REACH(TASK):
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
-    
+
     def execute_reach_3D_depth_partial(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
@@ -268,7 +268,7 @@ class REACH(TASK):
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
-    
+
     def execute_reach_3D_depth_full(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
@@ -361,48 +361,75 @@ class AVOID(TASK):
             else:
                 raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
 
-
-    def execute_avoid_1D(self):
+    def execute_avoid_1D_depth_minimum(self):
         self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
-        for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     gamma1_L = self.main.gammas(t)[0]
-            #     gamma1_U = self.main.gammas(t)[1]
 
-            #     x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #     constraint = z3.Or(x>self.x2, x<self.x1)
-            #     all_constraints.append(constraint)
+        for t in t_values:
             gamma1_L = self.main.gammas(t)[0]
             gamma1_U = self.main.gammas(t)[1]
 
             x = (lambda_ * gamma1_L + (1 - lambda_) * gamma1_U)
             constraint = z3.Or(x>self.x2, x<self.x1)
             all_constraints.append(constraint)
+
         print("Added Avoid Constraints: ", self.main.obstacles)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_avoid_2D(self):
+    def execute_avoid_1D_depth_partial(self):
+        self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma1_U = self.main.gammas(t)[1]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            constraint_low = z3.Or(x_low>self.x2, x_low<self.x1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            constraint_high = z3.Or(x_high>self.x2, x_high<self.x1)
+            all_constraints.append(constraint_high)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_1D_depth_full(self):
+        self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                gamma1_L = self.main.gammas(t)[0]
+                gamma1_U = self.main.gammas(t)[1]
+
+                x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                constraint = z3.Or(x>self.x2, x<self.x1)
+                all_constraints.append(constraint)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_2D_depth_minimum(self):
         self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
-        for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #             gamma1_L = self.main.gammas(t)[0]
-            #             gamma2_L = self.main.gammas(t)[1]
-            #             gamma1_U = self.main.gammas(t)[2]
-            #             gamma2_U = self.main.gammas(t)[3]
 
-            #             x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #             y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #             constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1))
-            #             all_constraints.append(constraint)
+        for t in t_values:
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma1_U = self.main.gammas(t)[2]
@@ -412,32 +439,70 @@ class AVOID(TASK):
             y = (lambda_ * gamma2_L + (1 - lambda_) * gamma2_U)
             constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1))
             all_constraints.append(constraint)
+
         print("Added Avoid Constraints: ", self.main.obstacles)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_avoid_3D(self):
+    def execute_avoid_2D_depth_partial(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma1_U = self.main.gammas(t)[2]
+            gamma2_U = self.main.gammas(t)[3]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            constraint_low = z3.Or(z3.Or(x_low>self.x2, x_low<self.x1), z3.Or(y_low>self.y2, y_low<self.y1))
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            constraint_high = z3.Or(z3.Or(x_high>self.x2, x_high<self.x1), z3.Or(y_high>self.y2, y_high<self.y1))
+            all_constraints.append(constraint_high)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_2D_depth_full(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma1_U = self.main.gammas(t)[2]
+                        gamma2_U = self.main.gammas(t)[3]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1))
+                        all_constraints.append(constraint)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_3D_depth_minimum(self):
         self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
-        for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #         for lambda_3 in self.main.lambda_values:
-            #             gamma1_L = self.main.gammas(t)[0]
-            #             gamma2_L = self.main.gammas(t)[1]
-            #             gamma3_L = self.main.gammas(t)[2]
-            #             gamma1_U = self.main.gammas(t)[3]
-            #             gamma2_U = self.main.gammas(t)[4]
-            #             gamma3_U = self.main.gammas(t)[5]
 
-            #             x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #             y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #             z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
-            #             constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1), z3.Or(z>self.z2, z<self.z1))
-            #             all_constraints.append(constraint)
+        for t in t_values:
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma3_L = self.main.gammas(t)[2]
@@ -450,6 +515,66 @@ class AVOID(TASK):
             z = (lambda_ * gamma3_L + (1 - lambda_) * gamma3_U)
             constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1), z3.Or(z>self.z2, z<self.z1))
             all_constraints.append(constraint)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_3D_depth_partial(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma3_L = self.main.gammas(t)[2]
+            gamma1_U = self.main.gammas(t)[3]
+            gamma2_U = self.main.gammas(t)[4]
+            gamma3_U = self.main.gammas(t)[5]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            z_low = (lambda_low * gamma3_L + (1 - lambda_low) * gamma3_U)
+            constraint_low = z3.Or(z3.Or(x_low>self.x2, x_low<self.x1), z3.Or(y_low>self.y2, y_low<self.y1), z3.Or(z_low>self.z2, z_low<self.z1))
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            z_high = (lambda_high * gamma3_L + (1 - lambda_high) * gamma3_U)
+            constraint_high = z3.Or(z3.Or(x_high>self.x2, x_high<self.x1), z3.Or(y_high>self.y2, y_high<self.y1), z3.Or(z_high>self.z2, z_high<self.z1))
+            all_constraints.append(constraint_high)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_3D_depth_full(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    for lambda_3 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma3_L = self.main.gammas(t)[2]
+                        gamma1_U = self.main.gammas(t)[3]
+                        gamma2_U = self.main.gammas(t)[4]
+                        gamma3_U = self.main.gammas(t)[5]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
+                        constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1), z3.Or(z>self.z2, z<self.z1))
+                        all_constraints.append(constraint)
+
         print("Added Avoid Constraints: ", self.main.obstacles)
         end = time.time()
         self.main.displayTime(self.start, end)
@@ -566,7 +691,7 @@ class STAY(TASK):
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
-    
+
     def execute_stay_1D_depth_full(self):
         self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
         all_constraints = []
@@ -679,7 +804,7 @@ class STAY(TASK):
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
-    
+
     def execute_stay_3D_depth_partial(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
@@ -710,7 +835,7 @@ class STAY(TASK):
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
-    
+
     def execute_stay_3D_depth_full(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
