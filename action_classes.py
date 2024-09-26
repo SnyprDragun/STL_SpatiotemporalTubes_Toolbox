@@ -5,11 +5,14 @@ import time
 import numpy as np
 
 class TASK():
+    depths = ["full", "partial", "minimum"]
+
     def __init__(self):
         self.eventually = False
         self.always = False
         self.implies = False
         self.start = time.time()
+        self.depth = "partial"
 
 class REACH(TASK):
     '''class for reach STL specification'''
@@ -49,72 +52,104 @@ class REACH(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        # match self.callable:
-        #     case 1:
-        #         return self.execute_reach_1D()
-        #     case 1.5:
-        #         print("Error: Must enter both values for X")
-        #     case 2:
-        #         return self.execute_reach_2D()
-        #     case 2.5:
-        #         print("Error: Must enter both values for Y")
-        #     case 3:
-        #         return self.execute_reach_3D()
-        #     case 3.5:
-        #         print("Error: Must enter both values for Z")
-        #     case default:
-        #         print("Error: Must enter ", 2 * self.main.dimension, "values for degree ", self.main.dimension, 
-        #             ". Currently have mismatch.")
-
         if self.callable == 1:
-            return self.execute_reach_1D()
+            if self.depth == "minimum":
+                return self.execute_reach_1D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_reach_1D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_reach_1D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         elif self.callable == 2:
-            return self.execute_reach_2D()
+            if self.depth == "minimum":
+                return self.execute_reach_2D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_reach_2D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_reach_2D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         else:
-            return self.execute_reach_3D()
+            if self.depth == "minimum":
+                return self.execute_reach_3D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_reach_3D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_reach_3D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
 
-    def execute_reach_1D(self):
+    def execute_reach_1D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
+    
         for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     gamma1_L = self.main.gammas(t)[0]
-            #     gamma1_U = self.main.gammas(t)[1]
-
-            #     x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #     constraint = z3.And(x<self.x2, x>self.x1)
-            #     all_constraints.append(constraint)
             gamma1_L = self.main.gammas(t)[0]
             gamma1_U = self.main.gammas(t)[1]
 
-            x = (lambda_ * gamma1_L + (1 - lambda_) * gamma1_U)
-            constraint = z3.And(x<self.x2, x>self.x1)
+            x_mid = (lambda_ * gamma1_L + (1 - lambda_) * gamma1_U)
+            constraint = z3.And(x_mid<self.x2, x_mid>self.x1)
             all_constraints.append(constraint)
+
         print("Added Reach Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_reach_2D(self):
+    def execute_reach_1D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma1_U = self.main.gammas(t)[1]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1)
+            all_constraints.append(constraint_high)
+
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+    
+    def execute_reach_1D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                gamma1_L = self.main.gammas(t)[0]
+                gamma1_U = self.main.gammas(t)[1]
+
+                x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                constraint = z3.And(x<self.x2, x>self.x1)
+                all_constraints.append(constraint)
+
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_2D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
+
         for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #         gamma1_L = self.main.gammas(t)[0]
-            #         gamma2_L = self.main.gammas(t)[1]
-            #         gamma1_U = self.main.gammas(t)[2]
-            #         gamma2_U = self.main.gammas(t)[3]
-
-            #         x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #         y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #         constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
-            #         all_constraints.append(constraint)
-
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma1_U = self.main.gammas(t)[2]
@@ -124,34 +159,67 @@ class REACH(TASK):
             y = (lambda_ * gamma2_L + (1 - lambda_) * gamma2_U)
             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
             all_constraints.append(constraint)
+
         print("Added Reach Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_reach_3D(self):
+    def execute_reach_2D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma1_U = self.main.gammas(t)[2]
+            gamma2_U = self.main.gammas(t)[3]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1, y_low<self.y2, y_low>self.y1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1, y_high<self.y2, y_high>self.y1)
+            all_constraints.append(constraint_high)
+
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_2D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    gamma1_L = self.main.gammas(t)[0]
+                    gamma2_L = self.main.gammas(t)[1]
+                    gamma1_U = self.main.gammas(t)[2]
+                    gamma2_U = self.main.gammas(t)[3]
+
+                    x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                    y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                    constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
+                    all_constraints.append(constraint)
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_3D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
-        lambda_low = 0
-        lambda_high = 1
         for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #         for lambda_3 in self.main.lambda_values:
-            #             gamma1_L = self.main.gammas(t)[0]
-            #             gamma2_L = self.main.gammas(t)[1]
-            #             gamma3_L = self.main.gammas(t)[2]
-            #             gamma1_U = self.main.gammas(t)[3]
-            #             gamma2_U = self.main.gammas(t)[4]
-            #             gamma3_U = self.main.gammas(t)[5]
-
-            #             x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #             y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #             z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
-            #             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
-            #             all_constraints.append(constraint)
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma3_L = self.main.gammas(t)[2]
@@ -165,20 +233,62 @@ class REACH(TASK):
             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
             all_constraints.append(constraint)
 
-            # x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
-            # y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
-            # z_low = (lambda_low * gamma3_L + (1 - lambda_low) * gamma3_U)
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+    
+    def execute_reach_3D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma3_L = self.main.gammas(t)[2]
+            gamma1_U = self.main.gammas(t)[3]
+            gamma2_U = self.main.gammas(t)[4]
+            gamma3_U = self.main.gammas(t)[5]
 
-            # x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
-            # y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
-            # z_high = (lambda_high * gamma3_L + (1 - lambda_high) * gamma3_U)
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            z_low = (lambda_low * gamma3_L + (1 - lambda_low) * gamma3_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1, y_low<self.y2, y_low>self.y1, z_low<self.z2, z_low>self.z1)
+            all_constraints.append(constraint_low)
 
-            # constraint_low = z3.And(x_low<self.x2, x_low>self.x1, y_low<self.y2, y_low>self.y1, z_low<self.z2, z_low>self.z1)
-            # constraint_high = z3.And(x_high<self.x2, x_high>self.x1, y_high<self.y2, y_high>self.y1, z_high<self.z2, z_high>self.z1)
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            z_high = (lambda_high * gamma3_L + (1 - lambda_high) * gamma3_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1, y_high<self.y2, y_high>self.y1, z_high<self.z2, z_high>self.z1)
+            all_constraints.append(constraint_high)
 
-            # all_constraints.append(constraint_low)
-            # all_constraints.append(constraint_high)
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+    
+    def execute_reach_3D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    for lambda_3 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma3_L = self.main.gammas(t)[2]
+                        gamma1_U = self.main.gammas(t)[3]
+                        gamma2_U = self.main.gammas(t)[4]
+                        gamma3_U = self.main.gammas(t)[5]
 
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
+                        constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
+                        all_constraints.append(constraint)
 
         print("Added Reach Constraints: ", self.main.setpoints)
         end = time.time()
@@ -221,28 +331,36 @@ class AVOID(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        # match self.callable:
-        #     case 1:
-        #         return self.execute_avoid_1D()
-        #     case 1.5:
-        #         print("Error: Must enter both values for X")
-        #     case 2:
-        #         return self.execute_avoid_2D()
-        #     case 2.5:
-        #         print("Error: Must enter both values for Y")
-        #     case 3:
-        #         return self.execute_avoid_3D()
-        #     case 3.5:
-        #         print("Error: Must enter both values for Z")
-        #     case default:
-        #         print("Error: Must enter proper values")
-
         if self.callable == 1:
-            return self.execute_avoid_1D()
+            if self.depth == "minimum":
+                return self.execute_avoid_1D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_avoid_1D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_avoid_1D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         elif self.callable == 2:
-            return self.execute_avoid_2D()
+            if self.depth == "minimum":
+                return self.execute_avoid_2D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_avoid_2D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_avoid_2D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         else:
-            return self.execute_avoid_3D()
+            if self.depth == "minimum":
+                return self.execute_avoid_3D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_avoid_3D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_avoid_3D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+
 
     def execute_avoid_1D(self):
         self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
@@ -373,22 +491,6 @@ class STAY(TASK):
             self.main.setFinish(self.t2)
 
     def checkCallableAndCallExecute(self):
-        # match self.callable:
-        #     case 1:
-        #         return self.execute_stay_1D()
-        #     case 1.5:
-        #         print("Error: Must enter both values for X")
-        #     case 2:
-        #         return self.execute_stay_2D()
-        #     case 2.5:
-        #         print("Error: Must enter both values for Y")
-        #     case 3:
-        #         return self.execute_stay_3D()
-        #     case 3.5:
-        #         print("Error: Must enter both values for Z")
-        #     case default:
-        #         print("Error: Must enter proper values")
-
         if self.callable == 1:
             return self.execute_stay_1D()
         elif self.callable == 2:
