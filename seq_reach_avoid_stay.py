@@ -36,7 +36,7 @@ class SeqReachAvoidStay():
 
     def gammas(self, t):
         '''method to calculate tube equations'''
-        tubes = [z3.Real(f'e_{i}') for i in range(2 * self.dimension)]
+        tubes = [z3.Real(f'g_{i}') for i in range(2 * self.dimension)]
 
         for i in range(2 * self.dimension):
             tubes[i] = 0
@@ -59,7 +59,7 @@ class SeqReachAvoidStay():
 
     def gamma_dot(self, t):
         '''method to calculate tube equations'''
-        tubes = [z3.Real(f'g_{i}') for i in range(2 * self.dimension)]
+        tubes = [z3.Real(f'gd_{i}') for i in range(2 * self.dimension)]
 
         for i in range(2 * self.dimension):
             tubes[i] = 0
@@ -73,6 +73,21 @@ class SeqReachAvoidStay():
                     power += 1
         return tubes
 
+    def real_gamma_dot(self, t, C_fin):
+        '''method to calculate tube equations'''
+        real_tubes = np.zeros(2 * self.dimension)
+
+        for i in range(2 * self.dimension):
+            power = 0
+            for j in range(self.degree + 1):
+                if power < 1:
+                    real_tubes[i] += 0
+                    power += 1
+                else:
+                    real_tubes[i] += power * ((C_fin[j + i * (self.degree + 1)]) * (t ** (power - 1)))
+                    power += 1
+        return real_tubes
+
     def general(self):
         '''method for general specifications'''
         temp_t_values = np.arange(self.getStart(), self.getFinish(), self._step)
@@ -84,7 +99,7 @@ class SeqReachAvoidStay():
                 self.solver.add(constraint_x)
                 
                 x_gamma_dot = (self.gamma_dot(t)[0] + self.gamma_dot(t)[1]) / 2
-                self.solver.add(x_gamma_dot < 10000000)
+                # self.solver.add(x_gamma_dot < 10000000)
 
             if self.dimension == 2:
                 gamma1_L = self.gammas(t)[0]
@@ -95,6 +110,7 @@ class SeqReachAvoidStay():
                 constraint_y = z3.And((gamma2_U - gamma2_L) > 0.5, (gamma2_U - gamma2_L) < self.tube_thickness)
                 self.solver.add(constraint_x)
                 self.solver.add(constraint_y)
+
             if self.dimension == 3:
                 gamma1_L = self.gammas(t)[0]
                 gamma2_L = self.gammas(t)[1]
