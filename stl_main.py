@@ -23,7 +23,7 @@ class STL():
 class AND(STL):
     def __init__(self, identifier, *instances):
         self.instances = instances
-        self.return_value = False
+        self.return_value = True
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
@@ -35,17 +35,25 @@ class AND(STL):
         for instance in self.instances:
             if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
                 constraints = instance.call()
-                print("from and 1")
                 for constraint in constraints:
                     self.main.solver.add(constraint)
             elif isinstance(instance, OR):
-                print("from and 2")
                 constraints = instance.call()
                 self.main.solver.add(constraints)
 
     def return_resultant(self):
         '''returns constraints'''
-        return self.instances
+        all_constraints =[]
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
+                print("instance", instance)
+                constraints = instance.call()
+                for constraint in constraints:
+                    all_constraints.append(constraint)
+            elif isinstance(instance, OR):
+                constraints = instance.call()
+                all_constraints.append(constraints)
+        return all_constraints
 
     def call(self):
         if self.return_value == True:
@@ -85,7 +93,6 @@ class OR(STL):
 
             if self.return_value == True:
                 constraints = self.instances[self.choice].call()
-                print("from or")
                 return constraints
             else:
                 constraints = self.instances[self.choice].call()
