@@ -14,6 +14,7 @@ class SeqReachAvoidStay():
     def __init__(self, degree, dimension, time_step, tube_thickness):
         self.setpoints = []
         self.obstacles = []
+        self.goal = []
         self._start = 0
         self._finish = 0
         self._step = time_step
@@ -518,7 +519,7 @@ class SeqReachAvoidStay():
             secs = (((end - start) * 10000) // 100) / 100
         else:
             secs = k - (mins * 60) - (hrs * 3600) - (days * 24 * 3600)
-        print("Time taken: ", days, "days", hrs , "hours, ", mins, "minutes, ", secs, "seconds")
+        print("Time taken: ", days, "days, ", hrs , "hours, ", mins, "minutes, ", secs, "seconds")
 
     def min_distance_element(self, target_array, goal):
         min_distance = float('inf')
@@ -595,3 +596,9 @@ class SeqReachAvoidStay():
 
     def set_dimension(self, value):
         self.dimension = value
+
+    def get_goal(self):
+        return self.goal
+
+    def set_goal(self, value):
+        self.goal = value

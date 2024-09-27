@@ -24,7 +24,6 @@ class AND(STL):
     def __init__(self, identifier, *instances):
         self.instances = instances
         self.return_value = False
-        self.always = False
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
@@ -33,12 +32,15 @@ class AND(STL):
 
     def add_resultant(self):
         '''adds constraints'''
-        if self.always == True:
-            for constraints in self.instances:
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
+                constraints = instance.call()
+                print("from and 1")
                 for constraint in constraints:
                     self.main.solver.add(constraint)
-        else:
-            for constraints in self.instances:
+            elif isinstance(instance, OR):
+                print("from and 2")
+                constraints = instance.call()
                 self.main.solver.add(constraints)
 
     def return_resultant(self):
@@ -55,7 +57,7 @@ class OR(STL):
     def __init__(self, identifier, *instances):
         self.choice = None
         self.instances = instances
-        self.return_value = False
+        self.return_value = True
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
@@ -66,6 +68,7 @@ class OR(STL):
         reach_or_targets = []
         avoid_or_targets = []
         stay_or_targets = []
+        goal = [13, 14, 13, 14]
         
         for instance in self.instances:
             if isinstance(instance.task, REACH):
@@ -75,18 +78,31 @@ class OR(STL):
             if isinstance(instance.task, STAY):
                 stay_or_targets.append(instance.task.local_setpoint)
 
-        ###### only handling reach now
-        print("OR case options: ", reach_or_targets)
-        goal = [13, 14, 13, 14]
-        self.choice = reach_or_targets.index(self.main.min_distance_element(reach_or_targets, goal))
-        print("choice: ", self.choice)
+        if reach_or_targets != []:
+            print("OR reach-target options: ", reach_or_targets)
+            self.choice = reach_or_targets.index(self.main.min_distance_element(reach_or_targets, goal))
+            print("choice: ", self.choice)
 
-        if self.return_value == True:
-            constraints = self.instances[self.choice].call()
-            return constraints
-        else:
-            constraints = self.instances[self.choice].call()
-            self.main.solver.add(constraints)
+            if self.return_value == True:
+                constraints = self.instances[self.choice].call()
+                print("from or")
+                return constraints
+            else:
+                constraints = self.instances[self.choice].call()
+                self.main.solver.add(constraints)
+
+        if avoid_or_targets != []:
+            print("OR avoid-target options: ", avoid_or_targets)
+            self.choice = avoid_or_targets.index(self.main.min_distance_element(avoid_or_targets, goal))
+            print("choice: ", self.choice)
+
+            if self.return_value == True:
+                constraints = self.instances[self.choice].call()
+                print("from or")
+                return constraints
+            else:
+                constraints = self.instances[self.choice].call()
+                self.main.solver.add(constraints)
 
 
 class NOT(STL):
