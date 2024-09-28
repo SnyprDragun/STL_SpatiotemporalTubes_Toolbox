@@ -23,7 +23,7 @@ class STL():
 class AND(STL):
     def __init__(self, identifier, *instances):
         self.instances = instances
-        self.return_value = True
+        self.return_value = False
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
@@ -32,32 +32,52 @@ class AND(STL):
 
     def add_resultant(self):
         '''adds constraints'''
+        print("total: ", len(self.instances))
         for instance in self.instances:
-            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
+            print("add")
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
                 constraints = instance.call()
+                for constraint in constraints:
+                    self.main.solver.add(constraint)
+            elif isinstance(instance, AND):
+                instance.return_value = True
+                constraints = instance.call()
+                if constraints == None:
+                    print("red: ", instance, instance.return_value, constraints)
                 for constraint in constraints:
                     self.main.solver.add(constraint)
             elif isinstance(instance, OR):
                 constraints = instance.call()
                 self.main.solver.add(constraints)
+            else:
+                print("Unknown Instance")
 
     def return_resultant(self):
         '''returns constraints'''
         all_constraints =[]
         for instance in self.instances:
-            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
-                print("instance", instance)
+            print("return")
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                constraints = instance.call()
+                for constraint in constraints:
+                    all_constraints.append(constraint)
+                print("current: ", len(all_constraints))
+            elif isinstance(instance, AND):
+                instance.return_value = True
                 constraints = instance.call()
                 for constraint in constraints:
                     all_constraints.append(constraint)
             elif isinstance(instance, OR):
                 constraints = instance.call()
                 all_constraints.append(constraints)
+            else:
+                print("Unknown Instance")
+        print("len check: ", len(all_constraints))
         return all_constraints
 
     def call(self):
         if self.return_value == True:
-            self.return_resultant()
+            return self.return_resultant()
         else:
             self.add_resultant()
 

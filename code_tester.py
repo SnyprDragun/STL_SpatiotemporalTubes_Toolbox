@@ -1599,165 +1599,165 @@ def final(temp):
 
 #########################################
 
-import re
+# import re
 
-# Define the classes (same as before)
-class REACH:
-    def __init__(self, id, start, end, setpoints):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.setpoints = setpoints
+# # Define the classes (same as before)
+# class REACH:
+#     def __init__(self, id, start, end, setpoints):
+#         self.id = id
+#         self.start = start
+#         self.end = end
+#         self.setpoints = setpoints
 
-    def call(self):
-        return f"REACH([{', '.join(map(str, self.setpoints))}])"
-
-
-class AVOID:
-    def __init__(self, id, start, end, setpoints):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.setpoints = setpoints
-
-    def call(self):
-        return f"AVOID([{', '.join(map(str, self.setpoints))}])"
+#     def call(self):
+#         return f"REACH([{', '.join(map(str, self.setpoints))}])"
 
 
-class EVENTUALLY:
-    def __init__(self, id, start, end, operation):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.operation = operation
+# class AVOID:
+#     def __init__(self, id, start, end, setpoints):
+#         self.id = id
+#         self.start = start
+#         self.end = end
+#         self.setpoints = setpoints
 
-    def call(self):
-        return f"EVENTUALLY({self.id}, {self.start},{self.end} {self.operation})"
-
-
-class ALWAYS:
-    def __init__(self, id, start, end, operation):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.operation = operation
-
-    def call(self):
-        return f"ALWAYS({self.id}, {self.start},{self.end} {self.operation})"
+#     def call(self):
+#         return f"AVOID([{', '.join(map(str, self.setpoints))}])"
 
 
-class OR:
-    def __init__(self, id, *operations):
-        self.id = id
-        self.operations = operations
+# class EVENTUALLY:
+#     def __init__(self, id, start, end, operation):
+#         self.id = id
+#         self.start = start
+#         self.end = end
+#         self.operation = operation
 
-    def call(self):
-        return f"OR({self.id}, {', '.join(op.call() for op in self.operations)})"
-
-
-class AND:
-    def __init__(self, id, *operations):
-        self.id = id
-        self.operations = operations
-
-    def call(self):
-        return f"AND({self.id}, {', '.join(op.call() for op in self.operations)})"
+#     def call(self):
+#         return f"EVENTUALLY({self.id}, {self.start},{self.end} {self.operation})"
 
 
-# Map variables like T₁, O₁ to setpoints (index ranges)
-variable_map = {
-    'T₁': [0, 1],
-    'T₂': [2, 3],
-    'O₁': [5, 6],
-    'O₂': [0, 1]
-}
+# class ALWAYS:
+#     def __init__(self, id, start, end, operation):
+#         self.id = id
+#         self.start = start
+#         self.end = end
+#         self.operation = operation
 
-# Helper function to parse and convert the string
-def parse_expression(expression, id=1):
-    # Remove whitespaces around brackets for cleaner parsing
-    expression = re.sub(r'\s*,\s*', ',', expression)  # Normalize commas
-    expression = re.sub(r'\s*\[\s*', '[', expression)  # Normalize brackets
-
-    def extract_arguments(inner_expr):
-        """Extracts arguments within brackets and returns them as a list."""
-        stack = []
-        result = []
-        temp = ""
-        for char in inner_expr:
-            if char == ',' and not stack:
-                result.append(temp.strip())
-                temp = ""
-            else:
-                temp += char
-                if char == '[':
-                    stack.append('[')
-                elif char == ']':
-                    stack.pop()
-        if temp:
-            result.append(temp.strip())
-        return result
-
-    # Recursively build the expression tree
-    def build_expression(expr, id):
-        # Match different operations
-        if expr.startswith("AND["):
-            args = extract_arguments(expr[4:-1])
-            return AND(id, *[build_expression(arg, id) for arg in args])
-        elif expr.startswith("OR["):
-            args = extract_arguments(expr[3:-1])
-            return OR(id, *[build_expression(arg, id) for arg in args])
-        elif expr.startswith("ALWAYS AVOID"):
-            args = extract_arguments(expr[12:-1])
-            start, end = 2, 3  # Set default or inferred values
-            setpoints = variable_map.get(args[0], [0])  # Map the argument to setpoints
-            return ALWAYS(id, start, end, AVOID(id, start, end, setpoints).call())
-        elif expr.startswith("EVENTUALLY"):
-            args = extract_arguments(expr[11:-1])
-            start, end = 0, 1  # Set default or inferred values
-            setpoints = variable_map.get(args[0], [0])  # Map the argument to setpoints
-            return EVENTUALLY(id, start, end, REACH(id, start, end, setpoints).call())
-        else:
-            raise ValueError(f"Unknown expression format: {expr}")
-
-    return build_expression(expression, id).call()
+#     def call(self):
+#         return f"ALWAYS({self.id}, {self.start},{self.end} {self.operation})"
 
 
-# Example usage
-expression = 'AND[OR[EVENTUALLY T₁ , EVENTUALLY T₂] , AND[ALWAYS AVOID O₁ , ALWAYS AVOID O₂]]'
-parsed_output = parse_expression(expression)
-# print(parsed_output)
+# class OR:
+#     def __init__(self, id, *operations):
+#         self.id = id
+#         self.operations = operations
 
-import os
-import subprocess
+#     def call(self):
+#         return f"OR({self.id}, {', '.join(op.call() for op in self.operations)})"
 
-def create_and_run_python_file(file_name, content):
-    # Step 1: Create the Python file and write the content to it
-    with open(file_name, 'w') as f:
-        f.write(content)
 
-    print(f"{file_name} created successfully!")
+# class AND:
+#     def __init__(self, id, *operations):
+#         self.id = id
+#         self.operations = operations
 
-    # Step 2: Run the newly created Python file
-    try:
-        # For Windows: use 'python' instead of 'python3'
-        result = subprocess.run(['python3', file_name], capture_output=True, text=True)
-        print("Output of the script:")
-        print(result.stdout)
-        if result.stderr:
-            print("Errors:")
-            print(result.stderr)
-    except Exception as e:
-        print(f"Failed to run the script: {e}")
+#     def call(self):
+#         return f"AND({self.id}, {', '.join(op.call() for op in self.operations)})"
 
-# Example usage
-file_name = 'test_script.py'
-content = '''#!/opt/homebrew/bin/python3.11
-# This is an automatically generated Python script
-print("Hello from the new Python file!")
-x = 5
-y = 10
-print(f"The sum of {x} and {y} is: {x + y}")
-'''
+
+# # Map variables like T₁, O₁ to setpoints (index ranges)
+# variable_map = {
+#     'T₁': [0, 1],
+#     'T₂': [2, 3],
+#     'O₁': [5, 6],
+#     'O₂': [0, 1]
+# }
+
+# # Helper function to parse and convert the string
+# def parse_expression(expression, id=1):
+#     # Remove whitespaces around brackets for cleaner parsing
+#     expression = re.sub(r'\s*,\s*', ',', expression)  # Normalize commas
+#     expression = re.sub(r'\s*\[\s*', '[', expression)  # Normalize brackets
+
+#     def extract_arguments(inner_expr):
+#         """Extracts arguments within brackets and returns them as a list."""
+#         stack = []
+#         result = []
+#         temp = ""
+#         for char in inner_expr:
+#             if char == ',' and not stack:
+#                 result.append(temp.strip())
+#                 temp = ""
+#             else:
+#                 temp += char
+#                 if char == '[':
+#                     stack.append('[')
+#                 elif char == ']':
+#                     stack.pop()
+#         if temp:
+#             result.append(temp.strip())
+#         return result
+
+#     # Recursively build the expression tree
+#     def build_expression(expr, id):
+#         # Match different operations
+#         if expr.startswith("AND["):
+#             args = extract_arguments(expr[4:-1])
+#             return AND(id, *[build_expression(arg, id) for arg in args])
+#         elif expr.startswith("OR["):
+#             args = extract_arguments(expr[3:-1])
+#             return OR(id, *[build_expression(arg, id) for arg in args])
+#         elif expr.startswith("ALWAYS AVOID"):
+#             args = extract_arguments(expr[12:-1])
+#             start, end = 2, 3  # Set default or inferred values
+#             setpoints = variable_map.get(args[0], [0])  # Map the argument to setpoints
+#             return ALWAYS(id, start, end, AVOID(id, start, end, setpoints).call())
+#         elif expr.startswith("EVENTUALLY"):
+#             args = extract_arguments(expr[11:-1])
+#             start, end = 0, 1  # Set default or inferred values
+#             setpoints = variable_map.get(args[0], [0])  # Map the argument to setpoints
+#             return EVENTUALLY(id, start, end, REACH(id, start, end, setpoints).call())
+#         else:
+#             raise ValueError(f"Unknown expression format: {expr}")
+
+#     return build_expression(expression, id).call()
+
+
+# # Example usage
+# expression = 'AND[OR[EVENTUALLY T₁ , EVENTUALLY T₂] , AND[ALWAYS AVOID O₁ , ALWAYS AVOID O₂]]'
+# parsed_output = parse_expression(expression)
+# # print(parsed_output)
+
+# import os
+# import subprocess
+
+# def create_and_run_python_file(file_name, content):
+#     # Step 1: Create the Python file and write the content to it
+#     with open(file_name, 'w') as f:
+#         f.write(content)
+
+#     print(f"{file_name} created successfully!")
+
+#     # Step 2: Run the newly created Python file
+#     try:
+#         # For Windows: use 'python' instead of 'python3'
+#         result = subprocess.run(['python3', file_name], capture_output=True, text=True)
+#         print("Output of the script:")
+#         print(result.stdout)
+#         if result.stderr:
+#             print("Errors:")
+#             print(result.stderr)
+#     except Exception as e:
+#         print(f"Failed to run the script: {e}")
+
+# # Example usage
+# file_name = 'test_script.py'
+# content = '''#!/opt/homebrew/bin/python3.11
+# # This is an automatically generated Python script
+# print("Hello from the new Python file!")
+# x = 5
+# y = 10
+# print(f"The sum of {x} and {y} is: {x + y}")
+# '''
 
 # create_and_run_python_file(file_name, content)
 
@@ -1796,79 +1796,79 @@ print(f"The sum of {x} and {y} is: {x + y}")
 # expr = '(x * y * z)'
 # print(convert_to_or(expr))
 
-import re
+# import re
 
-def convert_to_logic_expression(input_string):
-    # Step 1: Remove parentheses and spaces
-    cleaned_string = input_string.strip().replace('(', '').replace(')', '').replace(' ', '')
+# def convert_to_logic_expression(input_string):
+#     # Step 1: Remove parentheses and spaces
+#     cleaned_string = input_string.strip().replace('(', '').replace(')', '').replace(' ', '')
 
-    # Step 2: Check the operator in the string and split accordingly
-    if '∨' in cleaned_string:
-        # If the operator is '*', split by '*' and use OR
-        variables = cleaned_string.split('∨')
-        return f"OR({', '.join(variables)})"
-    elif '∧' in cleaned_string:
-        # If the operator is '$', split by '$' and use AND
-        variables = cleaned_string.split('∧')
-        return f"AND({', '.join(variables)})"
-    else:
-        # If neither operator is found, return the input as-is or raise an error
-        return "Invalid input: No valid operator found (* or $)"
+#     # Step 2: Check the operator in the string and split accordingly
+#     if '∨' in cleaned_string:
+#         # If the operator is '*', split by '*' and use OR
+#         variables = cleaned_string.split('∨')
+#         return f"OR({', '.join(variables)})"
+#     elif '∧' in cleaned_string:
+#         # If the operator is '$', split by '$' and use AND
+#         variables = cleaned_string.split('∧')
+#         return f"AND({', '.join(variables)})"
+#     else:
+#         # If neither operator is found, return the input as-is or raise an error
+#         return "Invalid input: No valid operator found (* or $)"
 
-# Example usage
-input_string_1 = "(◊ T₁ ∨ ◊ T₂ ∨ ◊ T₃)"
-input_string_2 = "(x ∧ y)"
+# # Example usage
+# input_string_1 = "(◊ T₁ ∨ ◊ T₂ ∨ ◊ T₃)"
+# input_string_2 = "(x ∧ y)"
 
-output_1 = convert_to_logic_expression(input_string_1)
-output_2 = convert_to_logic_expression(input_string_2)
+# output_1 = convert_to_logic_expression(input_string_1)
+# output_2 = convert_to_logic_expression(input_string_2)
 
-# print(f"Input: {input_string_1} -> Output: {output_1}")
-# print(f"Input: {input_string_2} -> Output: {output_2}")
+# # print(f"Input: {input_string_1} -> Output: {output_1}")
+# # print(f"Input: {input_string_2} -> Output: {output_2}")
 
-import numpy as np
+# import numpy as np
 
-def min_distance_element(arr, target):
-    min_distance = float('inf')
-    closest_element = None
-    for element in arr:
-        distance = np.linalg.norm(np.array(element) - target)
-        if distance < min_distance:
-            min_distance = distance
-            closest_element = element
-    return closest_element
+# def min_distance_element(arr, target):
+#     min_distance = float('inf')
+#     closest_element = None
+#     for element in arr:
+#         distance = np.linalg.norm(np.array(element) - target)
+#         if distance < min_distance:
+#             min_distance = distance
+#             closest_element = element
+#     return closest_element
 
-array = [[3, 4], [7, 8], [5, 10], [4, 3], [6, 10]]
-target = [5, 5]
-result = min_distance_element(array, target)
-# print(f"Element closest to (5, 5): {result}")
-# print(array[0:-2])
+# array = [[3, 4], [7, 8], [5, 10], [4, 3], [6, 10]]
+# target = [5, 5]
+# result = min_distance_element(array, target)
+# # print(f"Element closest to (5, 5): {result}")
+# # print(array[0:-2])
 
-import random
+# import random
 
-class reach():
-    def r(self):
-        k = random.randint(10, 100)
-        print("reach: ", k)
-        return k
+# class reach():
+#     def r(self):
+#         k = random.randint(10, 100)
+#         print("reach: ", k)
+#         return k
     
-    def call(self):
-        return self.r()
+#     def call(self):
+#         return self.r()
 
-class even():
-    def __init__(self, task):
-        self.task = task
+# class even():
+#     def __init__(self, task):
+#         self.task = task
 
-class Or():
-    def __init__(self, *args):
-        self.args = args
+# class Or():
+#     def __init__(self, *args):
+#         self.args = args
         
-    def decide(self):
-        choice = random.randint(0, len(self.args) - 1)
-        print("choice: ", choice)
-        # Create an instance of the task class before calling the method
-        instance = self.args[choice].task.call() # Create an instance of `reach`
-        print(instance)
-        return instance  # Call the method on the instance
+#     def decide(self):
+#         choice = random.randint(0, len(self.args) - 1)
+#         print("choice: ", choice)
+#         # Create an instance of the task class before calling the method
+#         instance = self.args[choice].task.call() # Create an instance of `reach`
+#         print(instance)
+#         return instance  # Call the method on the instance
     
 # Create the Or object and decide
 # j = Or(even(reach()), even(reach()), even(reach()), even(reach())).decide()
@@ -1876,10 +1876,66 @@ class Or():
 
 
 
-class A():
-    def ret(self):
-        return 5
+# class A():
+#     def ret(self):
+#         return 5
 
-a = A()
-b = a.ret()
-print(type(b))
+# a = A()
+# b = a.ret()
+# print(type(b))
+import numpy as np
+
+############## AND AND issue ##############
+class EVENTUALLY():
+    pass
+class ALWAYS():
+    pass
+class AND():
+    def __init__(self, *instances):
+        self.instances = instances
+        self.return_value = False
+    def add_resultant(self):
+        '''adds constraints'''
+        print("total: ", len(self.instances), self.instances)
+        for instance in self.instances:
+            print("add constraint block")
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                print("eventually/always encountered")
+            elif isinstance(instance, AND):
+                print("AND encountered")
+                instance.return_value = True
+                constraints = instance.call()
+                if constraints == None:
+                    print("red: ", instance, instance.return_value)
+                print(constraints)
+            else:
+                print("Unknown Instance")
+
+    def return_resultant(self):
+        '''returns constraints'''
+        all_constraints =[]
+        for instance in self.instances:
+            print("redirected to return block")
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                print("eventually/always in return block")
+                all_constraints.append(6)
+            elif isinstance(instance, AND):
+                instance.return_value = True
+                constraints = instance.call()
+                all_constraints.append(constraints)
+            else:
+                print("Unknown Instance")
+        print("constraints: ", all_constraints)
+        return all_constraints
+
+    def call(self):
+        if self.return_value == True:
+            return self.return_resultant()
+        else:
+            self.add_resultant()
+
+obj2 = AND(EVENTUALLY(), 
+            AND(ALWAYS()),
+            EVENTUALLY())
+
+obj2.call()

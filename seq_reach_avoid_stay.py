@@ -377,7 +377,6 @@ class SeqReachAvoidStay():
             dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
 
         # --------------------------------------------------- 3D PLOT {Y vs Z vs T} --------------------------------------------------- #
-        # fig3 = plt.figure(3)
         dx = fig3.add_subplot(312, projection='3d')
         dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
         dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
@@ -406,7 +405,6 @@ class SeqReachAvoidStay():
             dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
 
         # --------------------------------------------------- 3D PLOT {X vs Z vs T} --------------------------------------------------- #
-        # fig3 = plt.figure(3)
         dx = fig3.add_subplot(313, projection='3d')
         dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
         dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
