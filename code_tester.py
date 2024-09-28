@@ -1883,59 +1883,63 @@ def final(temp):
 # a = A()
 # b = a.ret()
 # print(type(b))
-import numpy as np
+# import numpy as np
 
-############## AND AND issue ##############
-class EVENTUALLY():
-    pass
-class ALWAYS():
-    pass
-class AND():
-    def __init__(self, *instances):
-        self.instances = instances
-        self.return_value = False
-    def add_resultant(self):
-        '''adds constraints'''
-        print("total: ", len(self.instances), self.instances)
-        for instance in self.instances:
-            print("add constraint block")
-            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
-                print("eventually/always encountered")
-            elif isinstance(instance, AND):
-                print("AND encountered")
-                instance.return_value = True
-                constraints = instance.call()
-                if constraints == None:
-                    print("red: ", instance, instance.return_value)
-                print(constraints)
-            else:
-                print("Unknown Instance")
+# ############## AND AND issue ##############
+# class EVENTUALLY():
+#     pass
+# class ALWAYS():
+#     pass
+# class AND():
+#     def __init__(self, *instances):
+#         self.instances = instances
+#         self.return_value = False
+#     def add_resultant(self):
+#         '''adds constraints'''
+#         print("total: ", len(self.instances), self.instances)
+#         for instance in self.instances:
+#             print("add constraint block")
+#             if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+#                 print("eventually/always encountered")
+#             elif isinstance(instance, AND):
+#                 print("AND encountered")
+#                 instance.return_value = True
+#                 constraints = instance.call()
+#                 if constraints == None:
+#                     print("red: ", instance, instance.return_value)
+#                 print(constraints)
+#             else:
+#                 print("Unknown Instance")
 
-    def return_resultant(self):
-        '''returns constraints'''
-        all_constraints =[]
-        for instance in self.instances:
-            print("redirected to return block")
-            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
-                print("eventually/always in return block")
-                all_constraints.append(6)
-            elif isinstance(instance, AND):
-                instance.return_value = True
-                constraints = instance.call()
-                all_constraints.append(constraints)
-            else:
-                print("Unknown Instance")
-        print("constraints: ", all_constraints)
-        return all_constraints
+#     def return_resultant(self):
+#         '''returns constraints'''
+#         all_constraints =[]
+#         for instance in self.instances:
+#             print("redirected to return block")
+#             if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+#                 print("eventually/always in return block")
+#                 all_constraints.append(6)
+#             elif isinstance(instance, AND):
+#                 instance.return_value = True
+#                 constraints = instance.call()
+#                 all_constraints.append(constraints)
+#             else:
+#                 print("Unknown Instance")
+#         print("constraints: ", all_constraints)
+#         return all_constraints
 
-    def call(self):
-        if self.return_value == True:
-            return self.return_resultant()
-        else:
-            self.add_resultant()
+#     def call(self):
+#         if self.return_value == True:
+#             return self.return_resultant()
+#         else:
+#             self.add_resultant()
 
-obj2 = AND(EVENTUALLY(), 
-            AND(ALWAYS()),
-            EVENTUALLY())
+# obj2 = AND(EVENTUALLY(), 
+#             AND(ALWAYS()),
+#             EVENTUALLY())
 
-obj2.call()
+# obj2.call()
+
+# l1 = [[1,2]]
+# l2 = [[3,4]]
+# print(l1+l2)

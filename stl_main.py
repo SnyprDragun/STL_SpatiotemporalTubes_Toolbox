@@ -11,6 +11,7 @@ class STL():
 
     def __init__(self, identifier, main):
         self.main = main
+        self.goal = []
         STL._instances[identifier] = self
 
     @classmethod
@@ -91,45 +92,75 @@ class OR(STL):
             self.main = a_instance.main
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
-
-    def call(self):
-        reach_or_targets = []
-        avoid_or_targets = []
-        stay_or_targets = []
-        goal = [13, 14, 13, 14]
+        
+        self.reach_or_targets = []
+        self.avoid_or_targets = []
+        self.stay_or_targets = []
         
         for instance in self.instances:
             if isinstance(instance.task, REACH):
-                reach_or_targets.append(instance.task.local_setpoint)
+                self.reach_or_targets.append(instance.task.local_setpoint)
             if isinstance(instance.task, AVOID):
-                avoid_or_targets.append(instance.task.local_obstacle)
+                self.avoid_or_targets.append(instance.task.local_obstacle)
             if isinstance(instance.task, STAY):
-                stay_or_targets.append(instance.task.local_setpoint)
+                self.stay_or_targets.append(instance.task.local_setpoint)
+        self.all_or_targets = self.reach_or_targets + self.avoid_or_targets + self.stay_or_targets
 
-        if reach_or_targets != []:
-            print("OR reach-target options: ", reach_or_targets)
-            self.choice = reach_or_targets.index(self.main.min_distance_element(reach_or_targets, goal))
+    def add_resultant(self):
+        if self.reach_or_targets != []:
+            print("OR reach-target options: ", self.reach_or_targets)
+            self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
             print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            self.main.solver.add(constraints)
 
-            if self.return_value == True:
-                constraints = self.instances[self.choice].call()
-                return constraints
-            else:
-                constraints = self.instances[self.choice].call()
-                self.main.solver.add(constraints)
-
-        if avoid_or_targets != []:
-            print("OR avoid-target options: ", avoid_or_targets)
-            self.choice = avoid_or_targets.index(self.main.min_distance_element(avoid_or_targets, goal))
+        elif self.avoid_or_targets != []:
+            print("OR avoid-target options: ", self.avoid_or_targets)
+            self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
             print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            self.main.solver.add(constraints)
 
-            if self.return_value == True:
-                constraints = self.instances[self.choice].call()
-                print("from or")
-                return constraints
-            else:
-                constraints = self.instances[self.choice].call()
-                self.main.solver.add(constraints)
+        elif self.reach_or_targets != [] and self.avoid_or_targets != []:
+            print("All OR target options: ", self.all_or_targets)
+            self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            self.main.solver.add(constraints)
+
+        else:
+            raise ValueError("No options in 'OR' block!")
+
+    def return_resultant(self):
+        if self.reach_or_targets != [] and self.avoid_or_targets == []:
+            print("OR reach-target options: ", self.reach_or_targets)
+            self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            return constraints
+
+        elif self.avoid_or_targets != [] and self.reach_or_targets == []:
+            print("OR avoid-target options: ", self.avoid_or_targets)
+            self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            return constraints
+        
+        elif self.reach_or_targets != [] and self.avoid_or_targets != []:
+            print("All OR target options: ", self.all_or_targets)
+            self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            return constraints
+        
+        else:
+            raise ValueError("No options in 'OR' block!")
+
+    def call(self):
+        if self.return_value == True:
+            return self.return_resultant()
+        else:
+            self.add_resultant()
 
 
 class NOT(STL):

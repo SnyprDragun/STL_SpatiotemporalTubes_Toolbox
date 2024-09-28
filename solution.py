@@ -49,6 +49,7 @@ stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
 #     # for j in i:
 #     stl2.main.solver.add(i)
 
+########## return the function call that is returmimg something😭😭😭😭
 obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
         AND(1, #EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)),
                EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8))
