@@ -273,6 +273,13 @@ class SeqReachAvoidStay():
             gd_zu[i] = self.real_gamma_dot(i * self._step, C_fin)[5]
             gd_zl[i] = self.real_gamma_dot(i * self._step, C_fin)[2]
 
+        print("x_u: ", x_u)
+        print("x_l: ", x_l)
+        print("y_u: ", y_u)
+        print("y_l: ", y_l)
+        print("z_u: ", z_u)
+        print("z_l: ", z_l)
+
         print("gamma_dot for x_upper max = ", max(gd_xu))
         print("gamma_dot for x_lower max = ", max(gd_xl))
         print("gamma_dot for y_upper max = ", max(gd_yu))
@@ -311,8 +318,8 @@ class SeqReachAvoidStay():
         bx.set_title("t vs y")
         cx.set_title("t vs z")
 
-        # --------------------------------------------------- 3D PLOT --------------------------------------------------- #
-        fig2 = plt.figure(2, figsize=(10, 8))
+        # --------------------------------------------------- 3D PLOT {X vs Y vs Z} --------------------------------------------------- #
+        fig2 = plt.figure(2, figsize = (10, 8))
         dx = fig2.add_subplot(111, projection='3d')
         dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
         dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
@@ -340,12 +347,92 @@ class SeqReachAvoidStay():
         for i in self.setpoints:
             dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
 
-        print("x_u: ", x_u)
-        print("x_l: ", x_l)
-        print("y_u: ", y_u)
-        print("y_l: ", y_l)
-        print("z_u: ", z_u)
-        print("z_l: ", z_l)
+        # --------------------------------------------------- 3D PLOT {X vs Y vs T} --------------------------------------------------- #
+        fig3 = plt.figure(3, figsize = (10, 8))
+        dx = fig3.add_subplot(311, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Time Axis')
+
+        for i in range(self.getRange()):
+            vertices = [[x_u[i], y_u[i], i * self._step], [x_l[i], y_u[i], i * self._step], [x_l[i], y_l[i], i * self._step], [x_u[i], y_l[i], i * self._step],
+                        [x_u[i], y_u[i], i * self._step], [x_l[i], y_u[i], i * self._step], [x_l[i], y_l[i], i * self._step], [x_u[i], y_l[i], i * self._step]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
+
+        # --------------------------------------------------- 3D PLOT {Y vs Z vs T} --------------------------------------------------- #
+        # fig3 = plt.figure(3)
+        dx = fig3.add_subplot(312, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Time Axis')
+
+        for i in range(self.getRange()):
+            vertices = [[z_u[i], y_u[i], i * self._step], [z_l[i], y_u[i], i * self._step], [z_l[i], y_l[i], i * self._step], [z_u[i], y_l[i], i * self._step],
+                        [z_u[i], y_u[i], i * self._step], [z_l[i], y_u[i], i * self._step], [z_l[i], y_l[i], i * self._step], [z_u[i], y_l[i], i * self._step]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
+
+        # --------------------------------------------------- 3D PLOT {X vs Z vs T} --------------------------------------------------- #
+        # fig3 = plt.figure(3)
+        dx = fig3.add_subplot(313, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Time Axis')
+
+        for i in range(self.getRange()):
+            vertices = [[z_u[i], z_u[i], i * self._step], [z_l[i], z_u[i], i * self._step], [z_l[i], z_l[i], i * self._step], [z_u[i], z_l[i], i * self._step],
+                        [z_u[i], z_u[i], i * self._step], [z_l[i], z_u[i], i * self._step], [z_l[i], z_l[i], i * self._step], [z_u[i], z_l[i], i * self._step]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
 
     def find_solution(self):
         '''method to plot the tubes'''
