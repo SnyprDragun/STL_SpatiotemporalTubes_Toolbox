@@ -11,7 +11,6 @@ class STL():
 
     def __init__(self, identifier, main):
         self.main = main
-        self.goal = []
         STL._instances[identifier] = self
 
     @classmethod
@@ -20,6 +19,7 @@ class STL():
 
     def plotter(self):
         self.main.find_solution()
+
 
 class AND(STL):
     def __init__(self, identifier, *instances):
@@ -82,6 +82,7 @@ class AND(STL):
         else:
             self.add_resultant()
 
+
 class OR(STL):
     def __init__(self, identifier, *instances):
         self.choice = None
@@ -104,7 +105,9 @@ class OR(STL):
                 self.avoid_or_targets.append(instance.task.local_obstacle)
             if isinstance(instance.task, STAY):
                 self.stay_or_targets.append(instance.task.local_setpoint)
+    
         self.all_or_targets = self.reach_or_targets + self.avoid_or_targets + self.stay_or_targets
+        self.goal = [13, 14, 13, 14]
 
     def add_resultant(self):
         if self.reach_or_targets != []:
@@ -189,6 +192,7 @@ class NOT(STL):
         else:
             self.add_resultant()
 
+
 class EVENTUALLY(STL):
     def __init__(self, identifier, t1, t2, task):
         task.eventually = True
@@ -208,6 +212,7 @@ class EVENTUALLY(STL):
             return all_constraints
         else:
             self.main.solver.add(all_constraints)
+
 
 class ALWAYS(STL):
     def __init__(self, identifier, t1, t2, task):
@@ -229,9 +234,11 @@ class ALWAYS(STL):
         else:
             self.main.solver.add(all_constraints)
 
+
 class UNTIL(STL):
     def __init__(self):
         pass
+
 
 class IMPLIES(STL):
     def __init__(self) -> None:
