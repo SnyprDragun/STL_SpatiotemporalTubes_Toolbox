@@ -50,12 +50,18 @@ stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
 #     stl2.main.solver.add(i)
 
 ########## return the function call that is returmimg something😭😭😭😭
-obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
-        OR(1, EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)),
-               EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8))
-            ),
-               EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15))) # 5min 31sec
+# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
+#         OR(1, EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)),
+#                EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8))
+#             ),
+#                EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15))) # 5min 31sec
+# obj2.call()
+
+
+obj2 = AND(1, IMPLIES(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)),
+                        EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)))) # 5min 31sec
 obj2.call()
+
 
 ## doesnt work (actually works, just that zero error shit, the start is 14 for code, 
 # but for plot it is 0, so thats all the crazyness, my code worksss 😭😭😭😭😭😭😭😭

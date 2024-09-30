@@ -34,7 +34,7 @@ class AND(STL):
     def add_resultant(self):
         '''adds constraints'''
         for instance in self.instances:
-            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND) or isinstance(instance, IMPLIES):
                 instance.return_value = True
                 constraints = instance.call()
                 for constraint in constraints:
@@ -278,42 +278,46 @@ class IMPLIES(STL):
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
 
     def call(self):
-        all_constraints_a = ()
-        all_constraints_b = ()
+        all_constraints_a = []
+        all_constraints_b = []
+        implies_constraint = []
 
         if isinstance(self.instance_a, EVENTUALLY) or isinstance(self.instance_a, ALWAYS):
             constraints = self.instance_a.call()
             for constraint in constraints:
-                all_constraints_a += constraint
+                all_constraints_a.append(constraint)
         elif isinstance(self.instance_a, AND):
             self.instance_a.return_value = True
             constraints = self.instance_a.call()
             for constraint in constraints:
-                all_constraints_a += constraint
+                all_constraints_a.append(constraint)
         elif isinstance(self.instance_a, OR):
             constraints = self.instance_a.call()
-            all_constraints_a += constraints
+            all_constraints_a.append(constraints)
         else:
             print("Unknown Instance")
 
         if isinstance(self.instance_b, EVENTUALLY) or isinstance(self.instance_b, ALWAYS):
             constraints = self.instance_b.call()
             for constraint in constraints:
-                all_constraints_b += constraint
+                all_constraints_b.append(constraint)
         elif isinstance(self.instance_b, AND):
             self.instance_b.return_value = True
             constraints = self.instance_b.call()
             for constraint in constraints:
-                all_constraints_b += constraint
+                all_constraints_b.append(constraint)
         elif isinstance(self.instance_b, OR):
             constraints = self.instance_b.call()
-            all_constraints_b += constraints
+            all_constraints_b.append(constraints)
         else:
             print("Unknown Instance")
 
-        final_implies_constraint = z3.Or(z3.Not(all_constraints_a), all_constraints_b)
+        for i in range(len(all_constraints_a)):
+            for j in range(len(all_constraints_b)):
+                implies_constraint.append(z3.Or(z3.Not(all_constraints_a[i]), all_constraints_b[j]))
 
         if self.return_value == True:
-            return final_implies_constraint
+            return implies_constraint
         else:
-            self.main.solver.add(final_implies_constraint)
+            for i in implies_constraint:
+                self.main.solver.add(i)
