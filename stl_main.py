@@ -92,7 +92,7 @@ class OR(STL):
                 self.stay_or_targets.append(instance.task.local_setpoint)
     
         self.all_or_targets = self.reach_or_targets + self.avoid_or_targets + self.stay_or_targets
-        self.goal = [13, 14, 13, 14]
+        self.goal = [3, 4, 3, 4, 3, 4]
 
     def add_resultant(self):
         if self.reach_or_targets != []:
