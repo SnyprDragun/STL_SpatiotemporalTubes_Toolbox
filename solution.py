@@ -6,12 +6,13 @@ from action_classes import *
 from error_handling import *
 from seq_reach_avoid_stay import *
 
-stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
-# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3)).call()).call()
+stl2 = STL(1, SeqReachAvoidStay(3, 3, 0.05, 3))
+# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3))).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3)).call()).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3)).call()).call()
 
-
+obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, -1, 2, -1, 2, 1, 4)), 
+           EVENTUALLY(1, 14, 15, REACH(stl2.main, 12, 15, 12, 15, 12, 15))).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)).call(), 
 #             # EVENTUALLY(1, 4, 5, REACH(stl2.main, 4, 5, 5, 6, 4, 5)).call(), 
 #             EVENTUALLY(1, 6, 7, REACH(stl2.main, 6, 7, 5, 6, 4, 5)).call(), 
@@ -28,7 +29,12 @@ stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
 #             # ALWAYS(1, 2, 7, AVOID(stl2.main, 5, 6, 5, 6, 4, 5)).call()
 #             ).call()
 
-
+# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
+#             EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)), 
+#             # EVENTUALLY(1, 6, 7, REACH(stl2.main, 6, 7, 5, 6, 4, 5)), 
+#             # EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15))
+#             # ALWAYS(1, 2, 7, AVOID(stl2.main, 5, 6, 5, 6, 4, 5)).call()
+#             ).call()
 
 
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), 
@@ -58,9 +64,9 @@ stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
 # obj2.call()
 
 
-obj2 = AND(1, IMPLIES(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)),
-                        EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)))) # 5min 31sec
-obj2.call()
+# obj2 = AND(1, IMPLIES(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)),
+#                         EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)))) # 5min 31sec
+# obj2.call()
 
 
 ## doesnt work (actually works, just that zero error shit, the start is 14 for code, 
@@ -170,8 +176,51 @@ stl2.plotter()
 # Time taken:  26 hours,  37 minutes,  21 seconds
 
 
-
-
+# STAY
+# Added Reach Constraints:  [[0, 1, 0, 1, 0, 1]]
+# Time taken:  0 days,  0 hours,  0 minutes,  0.26 seconds
+# Added Reach Constraints:  [[0, 1, 0, 1, 0, 1], [7, 8, 7, 8, 7, 8]]
+# Time taken:  0 days,  0 hours,  0 minutes,  0.53 seconds
+# Added Reach Constraints:  [[0, 1, 0, 1, 0, 1], [7, 8, 7, 8, 7, 8], [14, 15, 14, 15, 12, 15]]
+# Time taken:  0 days,  0 hours,  0 minutes,  1 seconds
+# Solving...
+# C0 = 0.4997518379140666
+# C1 = -2.4712022077233744
+# C2 = 3.4551157740834415
+# C3 = -1.013238004066181
+# C4 = 0.12718614259014793
+# C5 = -0.007212079336623855
+# C6 = 0.00015196252593303714
+# C7 = 0.4997518379140666
+# C8 = -2.4712022077233744
+# C9 = 3.4551157740834415
+# C10 = -1.013238004066181
+# C11 = 0.12718614259014793
+# C12 = -0.007212079336623855
+# C13 = 0.00015196252593303714
+# C14 = 0.9998759189570333
+# C15 = -2.4712022077233744
+# C16 = 3.4551157740834415
+# C17 = -1.013238004066181
+# C18 = 0.12718614259014793
+# C19 = -0.007212079336623855
+# C20 = 0.00015196252593303714
+# C21 = 0.9998759189570333
+# C22 = -2.4712022077233744
+# C23 = 3.4551157740834415
+# C24 = -1.013238004066181
+# C25 = 0.12718614259014793
+# C26 = -0.007212079336623855
+# C27 = 0.00015196252593303714
+# gamma_dot for x_upper max =  2.7278492633898637
+# gamma_dot for x_lower max =  2.7278492633898637
+# gamma_dot for y_upper max =  2.7278492633898637
+# gamma_dot for y_lower max =  2.7278492633898637
+# range:  301 
+# start:  0 
+# finish:  15 
+# step:  0.05
+# Time taken:  0 days,  3 hours,  2 minutes,  39 seconds
 
 
 

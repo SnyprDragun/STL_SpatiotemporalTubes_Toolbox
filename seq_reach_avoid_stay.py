@@ -119,9 +119,9 @@ class SeqReachAvoidStay():
                 gamma1_U = self.gammas(t)[3]
                 gamma2_U = self.gammas(t)[4]
                 gamma3_U = self.gammas(t)[5]
-                constraint_x = z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness)
-                constraint_y = z3.And((gamma2_U - gamma2_L) > 0.5, (gamma2_U - gamma2_L) < self.tube_thickness)
-                constraint_z = z3.And((gamma3_U - gamma3_L) > 0.5, (gamma3_U - gamma3_L) < self.tube_thickness)
+                constraint_x = z3.And((gamma1_U - gamma1_L) > 2.5, (gamma1_U - gamma1_L) < self.tube_thickness)
+                constraint_y = z3.And((gamma2_U - gamma2_L) > 2.5, (gamma2_U - gamma2_L) < self.tube_thickness)
+                constraint_z = z3.And((gamma3_U - gamma3_L) > 2.5, (gamma3_U - gamma3_L) < self.tube_thickness)
                 self.solver.add(constraint_x)
                 self.solver.add(constraint_y)
                 self.solver.add(constraint_z)
@@ -181,10 +181,10 @@ class SeqReachAvoidStay():
             gd_yu[i] = self.real_gamma_dot(i * self._step, C_fin)[3]
             gd_yl[i] = self.real_gamma_dot(i * self._step, C_fin)[1]
 
-        print("gamma_dot for x_upper max = ", max(gd_xu))
-        print("gamma_dot for x_lower max = ", max(gd_xl))
-        print("gamma_dot for y_upper max = ", max(gd_yu))
-        print("gamma_dot for y_lower max = ", max(gd_yl))
+        print("gamma_dot for x_upper max = ", gd_xu, max(gd_xu))
+        print("gamma_dot for x_lower max = ", gd_xl, max(gd_xl))
+        print("gamma_dot for y_upper max = ", gd_yu, max(gd_yu))
+        print("gamma_dot for y_lower max = ", gd_yl, max(gd_yl))
 
         fig, axs = plt.subplots(2, 1, figsize=(8, 8), constrained_layout=True)
         ax, bx = axs
