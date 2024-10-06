@@ -1,10 +1,8 @@
 #!/opt/homebrew/bin/python3.11
 '''script for robust sequential reach-avoid-stay STL specifications'''
+
 import z3
-import os
-import re
 import time
-import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -17,6 +15,7 @@ class SeqReachAvoidStay():
     def __init__(self, degree, dimension, time_step, tube_thickness):
         self.setpoints = []
         self.obstacles = []
+        self.goal = []
         self._start = 0
         self._finish = 0
         self._step = time_step
@@ -30,16 +29,12 @@ class SeqReachAvoidStay():
         self.degree = degree
         self.dimension = dimension
         self.solver = z3.Solver()
-
-        self.reach_solver = SOLVER(2, 3)
-        self.avoid_solver = SOLVER(2, 3)
-
         z3.set_param("parallel.enable", True)
         self.C = [z3.Real(f'C{i}') for i in range((2 * self.dimension) * (self.degree + 1))]
 
     def gammas(self, t):
         '''method to calculate tube equations'''
-        tubes = [z3.Real(f'e_{i}') for i in range(2 * self.dimension)]
+        tubes = [z3.Real(f'g_{i}') for i in range(2 * self.dimension)]
 
         for i in range(2 * self.dimension):
             tubes[i] = 0
@@ -53,11 +48,42 @@ class SeqReachAvoidStay():
         '''method to calculate tube equations'''
         real_tubes = np.zeros(2 * self.dimension)
 
-        for i in range(2 * self.dimension): #for 4 tube equations
+        for i in range(2 * self.dimension):
             power = 0
             for j in range(self.degree + 1): #each tube eq has {degree+1} terms
                 real_tubes[i] += ((C_fin[j + i * (self.degree + 1)]) * (t ** power))
                 power += 1
+        return real_tubes
+
+    def gamma_dot(self, t):
+        '''method to calculate tube equations'''
+        tubes = [z3.Real(f'gd_{i}') for i in range(2 * self.dimension)]
+
+        for i in range(2 * self.dimension):
+            tubes[i] = 0
+            power = 0
+            for j in range(self.degree + 1):
+                if power < 1:
+                    tubes[i] += 0
+                    power += 1
+                else:
+                    tubes[i] += power * ((self.C[j + i * (self.degree + 1)]) * (t ** (power - 1)))
+                    power += 1
+        return tubes
+
+    def real_gamma_dot(self, t, C_fin):
+        '''method to calculate tube equations'''
+        real_tubes = np.zeros(2 * self.dimension)
+
+        for i in range(2 * self.dimension):
+            power = 0
+            for j in range(self.degree + 1):
+                if power < 1:
+                    real_tubes[i] += 0
+                    power += 1
+                else:
+                    real_tubes[i] += power * ((C_fin[j + i * (self.degree + 1)]) * (t ** (power - 1)))
+                    power += 1
         return real_tubes
 
     def general(self):
@@ -69,6 +95,10 @@ class SeqReachAvoidStay():
                 gamma1_U = self.gammas(t)[1]
                 constraint_x = z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness)
                 self.solver.add(constraint_x)
+                
+                x_gamma_dot = (self.gamma_dot(t)[0] + self.gamma_dot(t)[1]) / 2
+                # self.solver.add(x_gamma_dot < 10000000)
+
             if self.dimension == 2:
                 gamma1_L = self.gammas(t)[0]
                 gamma2_L = self.gammas(t)[1]
@@ -78,6 +108,7 @@ class SeqReachAvoidStay():
                 constraint_y = z3.And((gamma2_U - gamma2_L) > 0.5, (gamma2_U - gamma2_L) < self.tube_thickness)
                 self.solver.add(constraint_x)
                 self.solver.add(constraint_y)
+
             if self.dimension == 3:
                 gamma1_L = self.gammas(t)[0]
                 gamma2_L = self.gammas(t)[1]
@@ -85,9 +116,9 @@ class SeqReachAvoidStay():
                 gamma1_U = self.gammas(t)[3]
                 gamma2_U = self.gammas(t)[4]
                 gamma3_U = self.gammas(t)[5]
-                constraint_x = z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness)
-                constraint_y = z3.And((gamma2_U - gamma2_L) > 0.5, (gamma2_U - gamma2_L) < self.tube_thickness)
-                constraint_z = z3.And((gamma3_U - gamma3_L) > 0.5, (gamma3_U - gamma3_L) < self.tube_thickness)
+                constraint_x = z3.And((gamma1_U - gamma1_L) > 2.5, (gamma1_U - gamma1_L) < self.tube_thickness)
+                constraint_y = z3.And((gamma2_U - gamma2_L) > 2.5, (gamma2_U - gamma2_L) < self.tube_thickness)
+                constraint_z = z3.And((gamma3_U - gamma3_L) > 2.5, (gamma3_U - gamma3_L) < self.tube_thickness)
                 self.solver.add(constraint_x)
                 self.solver.add(constraint_y)
                 self.solver.add(constraint_z)
@@ -96,9 +127,18 @@ class SeqReachAvoidStay():
         x_u = np.zeros(self.getRange())
         x_l = np.zeros(self.getRange())
 
+        gd_xu = np.zeros(self.getRange())
+        gd_xl = np.zeros(self.getRange())
+
         for i in range(self.getRange()):
             x_u[i] = self.real_gammas(i * self._step, C_fin)[1]
             x_l[i] = self.real_gammas(i * self._step, C_fin)[0]
+
+            gd_xu[i] = self.real_gamma_dot(i * self._step, C_fin)[1]
+            gd_xl[i] = self.real_gamma_dot(i * self._step, C_fin)[0]
+        
+        print("gamma_dot for x_upper max = ", max(gd_xu))
+        print("gamma_dot for x_lower max = ", max(gd_xl))
 
         fig, axs = plt.subplots(1, 1, figsize=(8, 8), constrained_layout=True)
         ax = axs
@@ -122,11 +162,26 @@ class SeqReachAvoidStay():
         y_u = np.zeros(self.getRange())
         y_l = np.zeros(self.getRange())
 
+        gd_xu = np.zeros(self.getRange())
+        gd_xl = np.zeros(self.getRange())
+        gd_yu = np.zeros(self.getRange())
+        gd_yl = np.zeros(self.getRange())
+
         for i in range(self.getRange()):
             x_u[i] = self.real_gammas(i * self._step, C_fin)[2]
             x_l[i] = self.real_gammas(i * self._step, C_fin)[0]
             y_u[i] = self.real_gammas(i * self._step, C_fin)[3]
             y_l[i] = self.real_gammas(i * self._step, C_fin)[1]
+
+            gd_xu[i] = self.real_gamma_dot(i * self._step, C_fin)[2]
+            gd_xl[i] = self.real_gamma_dot(i * self._step, C_fin)[0]
+            gd_yu[i] = self.real_gamma_dot(i * self._step, C_fin)[3]
+            gd_yl[i] = self.real_gamma_dot(i * self._step, C_fin)[1]
+
+        print("gamma_dot for x_upper max = ", gd_xu, max(gd_xu))
+        print("gamma_dot for x_lower max = ", gd_xl, max(gd_xl))
+        print("gamma_dot for y_upper max = ", gd_yu, max(gd_yu))
+        print("gamma_dot for y_lower max = ", gd_yl, max(gd_yl))
 
         fig, axs = plt.subplots(2, 1, figsize=(8, 8), constrained_layout=True)
         ax, bx = axs
@@ -152,9 +207,9 @@ class SeqReachAvoidStay():
 
         fig2 = plt.figure(2)
         dx = fig2.add_subplot(111, projection='3d')
-        dx.set_xlim(0, 15)
-        dx.set_ylim(0, 15)
-        dx.set_zlim(0, 15)
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
         dx.set_xlabel('X Axis')
         dx.set_ylabel('Y Axis')
         dx.set_zlabel('Time Axis')
@@ -193,6 +248,13 @@ class SeqReachAvoidStay():
         z_u = np.zeros(self.getRange())
         z_l = np.zeros(self.getRange())
 
+        gd_xu = np.zeros(self.getRange())
+        gd_xl = np.zeros(self.getRange())
+        gd_yu = np.zeros(self.getRange())
+        gd_yl = np.zeros(self.getRange())
+        gd_zu = np.zeros(self.getRange())
+        gd_zl = np.zeros(self.getRange())
+
         for i in range(self.getRange()):
             x_u[i] = self.real_gammas(i * self._step, C_fin)[3]
             x_l[i] = self.real_gammas(i * self._step, C_fin)[0]
@@ -201,7 +263,28 @@ class SeqReachAvoidStay():
             z_u[i] = self.real_gammas(i * self._step, C_fin)[5]
             z_l[i] = self.real_gammas(i * self._step, C_fin)[2]
 
-        fig, axs = plt.subplots(3, 1, figsize=(8, 8), constrained_layout=True)
+            gd_xu[i] = self.real_gamma_dot(i * self._step, C_fin)[3]
+            gd_xl[i] = self.real_gamma_dot(i * self._step, C_fin)[0]
+            gd_yu[i] = self.real_gamma_dot(i * self._step, C_fin)[4]
+            gd_yl[i] = self.real_gamma_dot(i * self._step, C_fin)[1]
+            gd_zu[i] = self.real_gamma_dot(i * self._step, C_fin)[5]
+            gd_zl[i] = self.real_gamma_dot(i * self._step, C_fin)[2]
+
+        print("x_u: ", x_u)
+        print("x_l: ", x_l)
+        print("y_u: ", y_u)
+        print("y_l: ", y_l)
+        print("z_u: ", z_u)
+        print("z_l: ", z_l)
+
+        print("gamma_dot for x_upper max = ", max(gd_xu))
+        print("gamma_dot for x_lower max = ", max(gd_xl))
+        print("gamma_dot for y_upper max = ", max(gd_yu))
+        print("gamma_dot for y_lower max = ", max(gd_yl))
+        print("gamma_dot for z_upper max = ", max(gd_zu))
+        print("gamma_dot for z_lower max = ", max(gd_zl))
+
+        fig1, axs = plt.subplots(3, 1, figsize=(8, 8), constrained_layout=True)
         ax, bx, cx = axs
         for i in self.setpoints:        # t1  x1/y1/z1  t2    t1  x2/y2/z2  x1
             square_x = patches.Rectangle((i[6], i[0]), i[7] - i[6], i[1] - i[0], edgecolor='green', facecolor='none')
@@ -228,9 +311,123 @@ class SeqReachAvoidStay():
         bx.plot(t, y_l)
         cx.plot(t, z_u)
         cx.plot(t, z_l)
-        ax.set_title("First Subplot")
-        bx.set_title("Second Subplot")
-        cx.set_title("Third Subplot")
+        ax.set_title("t vs x")
+        bx.set_title("t vs y")
+        cx.set_title("t vs z")
+
+        # --------------------------------------------------- 3D PLOT {X vs Y vs Z} --------------------------------------------------- #
+        fig2 = plt.figure(2, figsize = (10, 8))
+        dx = fig2.add_subplot(111, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Z Axis')
+
+        for i in range(self.getRange()):
+            vertices = [[x_u[i], y_u[i], z_u[i]], [x_l[i], y_u[i], z_u[i]], [x_l[i], y_l[i], z_u[i]], [x_u[i], y_l[i], z_u[i]],
+                        [x_u[i], y_u[i], z_l[i]], [x_l[i], y_u[i], z_l[i]], [x_l[i], y_l[i], z_l[i]], [x_u[i], y_l[i], z_l[i]]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                        [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                        [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                        [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                        [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                        [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
+
+        # --------------------------------------------------- 3D PLOT {X vs Y vs T} --------------------------------------------------- #
+        fig3 = plt.figure(3, figsize = (10, 8))
+        dx = fig3.add_subplot(311, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Time Axis')
+
+        for i in range(self.getRange()):
+            vertices = [[x_u[i], y_u[i], i * self._step], [x_l[i], y_u[i], i * self._step], [x_l[i], y_l[i], i * self._step], [x_u[i], y_l[i], i * self._step],
+                        [x_u[i], y_u[i], i * self._step], [x_l[i], y_u[i], i * self._step], [x_l[i], y_l[i], i * self._step], [x_u[i], y_l[i], i * self._step]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
+
+        # --------------------------------------------------- 3D PLOT {Y vs Z vs T} --------------------------------------------------- #
+        dx = fig3.add_subplot(312, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Time Axis')
+
+        for i in range(self.getRange()):
+            vertices = [[z_u[i], y_u[i], i * self._step], [z_l[i], y_u[i], i * self._step], [z_l[i], y_l[i], i * self._step], [z_u[i], y_l[i], i * self._step],
+                        [z_u[i], y_u[i], i * self._step], [z_l[i], y_u[i], i * self._step], [z_l[i], y_l[i], i * self._step], [z_u[i], y_l[i], i * self._step]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
+
+        # --------------------------------------------------- 3D PLOT {X vs Z vs T} --------------------------------------------------- #
+        dx = fig3.add_subplot(313, projection='3d')
+        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlabel('X Axis')
+        dx.set_ylabel('Y Axis')
+        dx.set_zlabel('Time Axis')
+
+        for i in range(self.getRange()):
+            vertices = [[z_u[i], z_u[i], i * self._step], [z_l[i], z_u[i], i * self._step], [z_l[i], z_l[i], i * self._step], [z_u[i], z_l[i], i * self._step],
+                        [z_u[i], z_u[i], i * self._step], [z_l[i], z_u[i], i * self._step], [z_l[i], z_l[i], i * self._step], [z_u[i], z_l[i], i * self._step]]
+
+            faces = [   [vertices[0], vertices[1], vertices[2], vertices[3]],  # Bottom face
+                [vertices[4], vertices[5], vertices[6], vertices[7]],  # Top face
+                [vertices[0], vertices[1], vertices[5], vertices[4]],  # Front face
+                [vertices[2], vertices[3], vertices[7], vertices[6]],  # Back face
+                [vertices[1], vertices[2], vertices[6], vertices[5]],  # Right face
+                [vertices[0], vertices[3], vertices[7], vertices[4]]]  # Left face
+
+            dx.add_collection3d(Poly3DCollection(faces, facecolors='blue', edgecolors='blue', alpha=0.25))
+
+        for i in self.obstacles:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='red', edgecolors='r', alpha=0.25))
+
+        for i in self.setpoints:
+            dx.add_collection3d(Poly3DCollection(self.faces(i), facecolors='green', edgecolors='green', alpha=0.25))
 
     def find_solution(self):
         '''method to plot the tubes'''
@@ -246,7 +443,7 @@ class SeqReachAvoidStay():
             Coeffs = []
             C_fin = np.zeros((2 * self.dimension) * (self.degree + 1))
             for i in range(len(self.C)):
-                xi[i] = (float(model[self.C[i]].numerator().as_long()))/(float(model[self.C[i]].denominator().as_long()))
+                xi[i] = (np.float128(model[self.C[i]].numerator().as_long()))/(np.float128(model[self.C[i]].denominator().as_long()))
                 print("{} = {}".format(self.C[i], xi[i]))
                 Coeffs.append(xi[i])
 
@@ -269,9 +466,6 @@ class SeqReachAvoidStay():
             print("range: ", self.getRange(), "\nstart: ", self.getStart(), "\nfinish: ", self.getFinish(), "\nstep: ", self._step)
             end = time.time()
             self.displayTime(start, end)
-
-    def parallel_solvers(self):
-        SOLVER.commonSolution(self.reach_solver.solver, self.avoid_solver.solver)
 
     def test_plot(self):
         '''method to plot the tubes'''
@@ -397,13 +591,14 @@ class SeqReachAvoidStay():
 
     def displayTime(self, start, end):
         k = int(end - start)
-        hrs = k // 3600
+        days = k // (3600 * 24)
+        hrs = (k // 3600) - (days * 24)
         mins = (k // 60) - (hrs * 60)
         if end - start < 1:
             secs = (((end - start) * 10000) // 100) / 100
         else:
-            secs = k - (mins * 60) - (hrs * 60 * 60)
-        print("Time taken: ", hrs , "hours, ", mins, "minutes, ", secs, "seconds")
+            secs = k - (mins * 60) - (hrs * 3600) - (days * 24 * 3600)
+        print("Time taken: ", days, "days, ", hrs , "hours, ", mins, "minutes, ", secs, "seconds")
 
     def min_distance_element(self, target_array, goal):
         min_distance = float('inf')
@@ -481,14 +676,23 @@ class SeqReachAvoidStay():
     def set_dimension(self, value):
         self.dimension = value
 
+    def get_goal(self):
+        return self.goal
 
-'''script for Reach, Avoid and Stay classes'''
+    def set_goal(self, value):
+        self.goal = value
+
+
 class TASK():
+    depths = ["full", "partial", "minimum"]
+
     def __init__(self):
         self.eventually = False
         self.always = False
         self.implies = False
         self.start = time.time()
+        self.depth = "partial"
+
 
 class REACH(TASK):
     '''class for reach STL specification'''
@@ -529,54 +733,103 @@ class REACH(TASK):
 
     def checkCallableAndCallExecute(self):
         if self.callable == 1:
-            return self.execute_reach_1D()
+            if self.depth == "minimum":
+                return self.execute_reach_1D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_reach_1D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_reach_1D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         elif self.callable == 2:
-            return self.execute_reach_2D()
+            if self.depth == "minimum":
+                return self.execute_reach_2D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_reach_2D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_reach_2D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         else:
-            return self.execute_reach_3D()
+            if self.depth == "minimum":
+                return self.execute_reach_3D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_reach_3D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_reach_3D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
 
-    def execute_reach_1D(self):
+    def execute_reach_1D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
+    
         for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     gamma1_L = self.main.gammas(t)[0]
-            #     gamma1_U = self.main.gammas(t)[1]
-
-            #     x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #     constraint = z3.And(x<self.x2, x>self.x1)
-            #     all_constraints.append(constraint)
             gamma1_L = self.main.gammas(t)[0]
             gamma1_U = self.main.gammas(t)[1]
 
-            x = (lambda_ * gamma1_L + (1 - lambda_) * gamma1_U)
-            constraint = z3.And(x<self.x2, x>self.x1)
+            x_mid = (lambda_ * gamma1_L + (1 - lambda_) * gamma1_U)
+            constraint = z3.And(x_mid<self.x2, x_mid>self.x1)
             all_constraints.append(constraint)
+
         print("Added Reach Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_reach_2D(self):
+    def execute_reach_1D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma1_U = self.main.gammas(t)[1]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1)
+            all_constraints.append(constraint_high)
+
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_1D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                gamma1_L = self.main.gammas(t)[0]
+                gamma1_U = self.main.gammas(t)[1]
+
+                x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                constraint = z3.And(x<self.x2, x>self.x1)
+                all_constraints.append(constraint)
+
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_2D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
+
         for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #         gamma1_L = self.main.gammas(t)[0]
-            #         gamma2_L = self.main.gammas(t)[1]
-            #         gamma1_U = self.main.gammas(t)[2]
-            #         gamma2_U = self.main.gammas(t)[3]
-
-            #         x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #         y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #         constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
-            #         all_constraints.append(constraint)
-
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma1_U = self.main.gammas(t)[2]
@@ -586,32 +839,67 @@ class REACH(TASK):
             y = (lambda_ * gamma2_L + (1 - lambda_) * gamma2_U)
             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
             all_constraints.append(constraint)
+
         print("Added Reach Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_reach_3D(self):
+    def execute_reach_2D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma1_U = self.main.gammas(t)[2]
+            gamma2_U = self.main.gammas(t)[3]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1, y_low<self.y2, y_low>self.y1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1, y_high<self.y2, y_high>self.y1)
+            all_constraints.append(constraint_high)
+
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_2D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    gamma1_L = self.main.gammas(t)[0]
+                    gamma2_L = self.main.gammas(t)[1]
+                    gamma1_U = self.main.gammas(t)[2]
+                    gamma2_U = self.main.gammas(t)[3]
+
+                    x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                    y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                    constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
+                    all_constraints.append(constraint)
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_3D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
         for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #         for lambda_3 in self.main.lambda_values:
-            #             gamma1_L = self.main.gammas(t)[0]
-            #             gamma2_L = self.main.gammas(t)[1]
-            #             gamma3_L = self.main.gammas(t)[2]
-            #             gamma1_U = self.main.gammas(t)[3]
-            #             gamma2_U = self.main.gammas(t)[4]
-            #             gamma3_U = self.main.gammas(t)[5]
-
-            #             x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #             y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #             z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
-            #             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
-            #             all_constraints.append(constraint)
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma3_L = self.main.gammas(t)[2]
@@ -624,6 +912,64 @@ class REACH(TASK):
             z = (lambda_ * gamma3_L + (1 - lambda_) * gamma3_U)
             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
             all_constraints.append(constraint)
+
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_3D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma3_L = self.main.gammas(t)[2]
+            gamma1_U = self.main.gammas(t)[3]
+            gamma2_U = self.main.gammas(t)[4]
+            gamma3_U = self.main.gammas(t)[5]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            z_low = (lambda_low * gamma3_L + (1 - lambda_low) * gamma3_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1, y_low<self.y2, y_low>self.y1, z_low<self.z2, z_low>self.z1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            z_high = (lambda_high * gamma3_L + (1 - lambda_high) * gamma3_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1, y_high<self.y2, y_high>self.y1, z_high<self.z2, z_high>self.z1)
+            all_constraints.append(constraint_high)
+
+        print("Added Reach Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_reach_3D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    for lambda_3 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma3_L = self.main.gammas(t)[2]
+                        gamma1_U = self.main.gammas(t)[3]
+                        gamma2_U = self.main.gammas(t)[4]
+                        gamma3_U = self.main.gammas(t)[5]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
+                        constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
+                        all_constraints.append(constraint)
+
         print("Added Reach Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
@@ -638,6 +984,7 @@ class AVOID(TASK):
             self.x1 = x1
             self.x2 = x2
             self.callable = 1
+            self.local_obstacle = [self.x1, self.x2]
         elif x1 is not None and x2 is None:
             self.callable = 1.5
 
@@ -645,6 +992,7 @@ class AVOID(TASK):
             self.y1 = y1
             self.y2 = y2
             self.callable = 2
+            self.local_obstacle = [self.x1, self.x2, self.y1, self.y2]
         elif y1 is not None and y2 is None:
             self.callable = 2.5
 
@@ -652,6 +1000,7 @@ class AVOID(TASK):
             self.z1 = z1
             self.z2 = z2
             self.callable = 3
+            self.local_obstacle = [self.x1, self.x2, self.y1, self.y2, self.z1, self.z2]
         elif z1 is not None and z2 is None:
             self.callable = 3.5
 
@@ -666,53 +1015,104 @@ class AVOID(TASK):
 
     def checkCallableAndCallExecute(self):
         if self.callable == 1:
-            return self.execute_avoid_1D()
+            if self.depth == "minimum":
+                return self.execute_avoid_1D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_avoid_1D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_avoid_1D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         elif self.callable == 2:
-            return self.execute_avoid_2D()
+            if self.depth == "minimum":
+                return self.execute_avoid_2D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_avoid_2D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_avoid_2D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         else:
-            return self.execute_avoid_3D()
+            if self.depth == "minimum":
+                return self.execute_avoid_3D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_avoid_3D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_avoid_3D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
 
-    def execute_avoid_1D(self):
+    def execute_avoid_1D_depth_minimum(self):
         self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
-        for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     gamma1_L = self.main.gammas(t)[0]
-            #     gamma1_U = self.main.gammas(t)[1]
 
-            #     x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #     constraint = z3.Or(x>self.x2, x<self.x1)
-            #     all_constraints.append(constraint)
+        for t in t_values:
             gamma1_L = self.main.gammas(t)[0]
             gamma1_U = self.main.gammas(t)[1]
 
             x = (lambda_ * gamma1_L + (1 - lambda_) * gamma1_U)
             constraint = z3.Or(x>self.x2, x<self.x1)
             all_constraints.append(constraint)
+
         print("Added Avoid Constraints: ", self.main.obstacles)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_avoid_2D(self):
+    def execute_avoid_1D_depth_partial(self):
+        self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma1_U = self.main.gammas(t)[1]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            constraint_low = z3.Or(x_low>self.x2, x_low<self.x1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            constraint_high = z3.Or(x_high>self.x2, x_high<self.x1)
+            all_constraints.append(constraint_high)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_1D_depth_full(self):
+        self.main.obstacles.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                gamma1_L = self.main.gammas(t)[0]
+                gamma1_U = self.main.gammas(t)[1]
+
+                x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                constraint = z3.Or(x>self.x2, x<self.x1)
+                all_constraints.append(constraint)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_2D_depth_minimum(self):
         self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
-        for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #             gamma1_L = self.main.gammas(t)[0]
-            #             gamma2_L = self.main.gammas(t)[1]
-            #             gamma1_U = self.main.gammas(t)[2]
-            #             gamma2_U = self.main.gammas(t)[3]
 
-            #             x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #             y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #             constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1))
-            #             all_constraints.append(constraint)
+        for t in t_values:
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma1_U = self.main.gammas(t)[2]
@@ -722,32 +1122,70 @@ class AVOID(TASK):
             y = (lambda_ * gamma2_L + (1 - lambda_) * gamma2_U)
             constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1))
             all_constraints.append(constraint)
+
         print("Added Avoid Constraints: ", self.main.obstacles)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_avoid_3D(self):
+    def execute_avoid_2D_depth_partial(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma1_U = self.main.gammas(t)[2]
+            gamma2_U = self.main.gammas(t)[3]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            constraint_low = z3.Or(z3.Or(x_low>self.x2, x_low<self.x1), z3.Or(y_low>self.y2, y_low<self.y1))
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            constraint_high = z3.Or(z3.Or(x_high>self.x2, x_high<self.x1), z3.Or(y_high>self.y2, y_high<self.y1))
+            all_constraints.append(constraint_high)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_2D_depth_full(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma1_U = self.main.gammas(t)[2]
+                        gamma2_U = self.main.gammas(t)[3]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1))
+                        all_constraints.append(constraint)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_3D_depth_minimum(self):
         self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
-        for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #         for lambda_3 in self.main.lambda_values:
-            #             gamma1_L = self.main.gammas(t)[0]
-            #             gamma2_L = self.main.gammas(t)[1]
-            #             gamma3_L = self.main.gammas(t)[2]
-            #             gamma1_U = self.main.gammas(t)[3]
-            #             gamma2_U = self.main.gammas(t)[4]
-            #             gamma3_U = self.main.gammas(t)[5]
 
-            #             x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #             y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #             z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
-            #             constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1), z3.Or(z>self.z2, z<self.z1))
-            #             all_constraints.append(constraint)
+        for t in t_values:
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma3_L = self.main.gammas(t)[2]
@@ -760,6 +1198,66 @@ class AVOID(TASK):
             z = (lambda_ * gamma3_L + (1 - lambda_) * gamma3_U)
             constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1), z3.Or(z>self.z2, z<self.z1))
             all_constraints.append(constraint)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_3D_depth_partial(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma3_L = self.main.gammas(t)[2]
+            gamma1_U = self.main.gammas(t)[3]
+            gamma2_U = self.main.gammas(t)[4]
+            gamma3_U = self.main.gammas(t)[5]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            z_low = (lambda_low * gamma3_L + (1 - lambda_low) * gamma3_U)
+            constraint_low = z3.Or(z3.Or(x_low>self.x2, x_low<self.x1), z3.Or(y_low>self.y2, y_low<self.y1), z3.Or(z_low>self.z2, z_low<self.z1))
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            z_high = (lambda_high * gamma3_L + (1 - lambda_high) * gamma3_U)
+            constraint_high = z3.Or(z3.Or(x_high>self.x2, x_high<self.x1), z3.Or(y_high>self.y2, y_high<self.y1), z3.Or(z_high>self.z2, z_high<self.z1))
+            all_constraints.append(constraint_high)
+
+        print("Added Avoid Constraints: ", self.main.obstacles)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_avoid_3D_depth_full(self):
+        self.main.obstacles.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    for lambda_3 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma3_L = self.main.gammas(t)[2]
+                        gamma1_U = self.main.gammas(t)[3]
+                        gamma2_U = self.main.gammas(t)[4]
+                        gamma3_U = self.main.gammas(t)[5]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
+                        constraint = z3.Or(z3.Or(x>self.x2, x<self.x1), z3.Or(y>self.y2, y<self.y1), z3.Or(z>self.z2, z<self.z1))
+                        all_constraints.append(constraint)
+
         print("Added Avoid Constraints: ", self.main.obstacles)
         end = time.time()
         self.main.displayTime(self.start, end)
@@ -774,6 +1272,7 @@ class STAY(TASK):
             self.x1 = x1
             self.x2 = x2
             self.callable = 1
+            self.local_setpoint = [self.x1, self.x2]
         elif x1 is not None and x2 is None:
             self.callable = 1.5
 
@@ -781,6 +1280,7 @@ class STAY(TASK):
             self.y1 = y1
             self.y2 = y2
             self.callable = 2
+            self.local_setpoint = [self.x1, self.x2, self.y1, self.y2]
         elif y1 is not None and y2 is None:
             self.callable = 2.5
 
@@ -788,6 +1288,7 @@ class STAY(TASK):
             self.z1 = z1
             self.z2 = z2
             self.callable = 3
+            self.local_setpoint = [self.x1, self.x2, self.y1, self.y2, self.z1, self.z2]
         elif z1 is not None and z2 is None:
             self.callable = 3.5
 
@@ -802,53 +1303,103 @@ class STAY(TASK):
 
     def checkCallableAndCallExecute(self):
         if self.callable == 1:
-            return self.execute_stay_1D()
+            if self.depth == "minimum":
+                return self.execute_stay_1D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_stay_1D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_stay_1D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         elif self.callable == 2:
-            return self.execute_stay_2D()
+            if self.depth == "minimum":
+                return self.execute_stay_2D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_stay_2D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_stay_2D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
+        
         else:
-            return self.execute_stay_3D()
+            if self.depth == "minimum":
+                return self.execute_stay_3D_depth_minimum()
+            elif self.depth == "partial":
+                return self.execute_stay_3D_depth_partial()
+            elif self.depth == "full":
+                return self.execute_stay_3D_depth_full()
+            else:
+                raise ValueError(f"Invalid depth value: {self.depth}. Must be one of {list(self.depths)}")
 
-    def execute_stay_1D(self):
+    def execute_stay_1D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
+    
         for t in t_values:
-        #     for lambda_1 in self.main.lambda_values:
-        #         gamma1_L = self.main.gammas(t)[0]
-        #         gamma1_U = self.main.gammas(t)[1]
-
-        #         x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-        #         constraint = z3.And(x<self.x2, x>self.x1)
-        #         all_constraints.append(constraint)
             gamma1_L = self.main.gammas(t)[0]
             gamma1_U = self.main.gammas(t)[1]
 
-            x = (lambda_ * gamma1_L + (1 - lambda_) * gamma1_U)
-            constraint = z3.And(x<self.x2, x>self.x1)
+            x_mid = (lambda_ * gamma1_L + (1 - lambda_) * gamma1_U)
+            constraint = z3.And(x_mid<self.x2, x_mid>self.x1)
             all_constraints.append(constraint)
+
         print("Added Stay Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_stay_2D(self):
+    def execute_stay_1D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma1_U = self.main.gammas(t)[1]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1)
+            all_constraints.append(constraint_high)
+
+        print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_stay_1D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                gamma1_L = self.main.gammas(t)[0]
+                gamma1_U = self.main.gammas(t)[1]
+
+                x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                constraint = z3.And(x<self.x2, x>self.x1)
+                all_constraints.append(constraint)
+
+        print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_stay_2D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
-        for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #         gamma1_L = self.main.gammas(t)[0]
-            #         gamma2_L = self.main.gammas(t)[1]
-            #         gamma1_U = self.main.gammas(t)[2]
-            #         gamma2_U = self.main.gammas(t)[3]
 
-            #         x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #         y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #         constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
-            #         all_constraints.append(constraint)
+        for t in t_values:
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma1_U = self.main.gammas(t)[2]
@@ -858,32 +1409,67 @@ class STAY(TASK):
             y = (lambda_ * gamma2_L + (1 - lambda_) * gamma2_U)
             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
             all_constraints.append(constraint)
+
         print("Added Stay Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
-    def execute_stay_3D(self):
+    def execute_stay_2D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma1_U = self.main.gammas(t)[2]
+            gamma2_U = self.main.gammas(t)[3]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1, y_low<self.y2, y_low>self.y1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1, y_high<self.y2, y_high>self.y1)
+            all_constraints.append(constraint_high)
+
+        print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_stay_2D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    gamma1_L = self.main.gammas(t)[0]
+                    gamma2_L = self.main.gammas(t)[1]
+                    gamma1_U = self.main.gammas(t)[2]
+                    gamma2_U = self.main.gammas(t)[3]
+
+                    x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                    y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                    constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1)
+                    all_constraints.append(constraint)
+        print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_stay_3D_depth_minimum(self):
         self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
         all_constraints = []
         t_values = np.arange(self.t1, self.t2, self.main._step)
         lambda_ = 0.5
         for t in t_values:
-            # for lambda_1 in self.main.lambda_values:
-            #     for lambda_2 in self.main.lambda_values:
-            #         for lambda_3 in self.main.lambda_values:
-            #             gamma1_L = self.main.gammas(t)[0]
-            #             gamma2_L = self.main.gammas(t)[1]
-            #             gamma3_L = self.main.gammas(t)[2]
-            #             gamma1_U = self.main.gammas(t)[3]
-            #             gamma2_U = self.main.gammas(t)[4]
-            #             gamma3_U = self.main.gammas(t)[5]
-
-            #             x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
-            #             y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
-            #             z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
-            #             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
-            #             all_constraints.append(constraint)
             gamma1_L = self.main.gammas(t)[0]
             gamma2_L = self.main.gammas(t)[1]
             gamma3_L = self.main.gammas(t)[2]
@@ -896,13 +1482,70 @@ class STAY(TASK):
             z = (lambda_ * gamma3_L + (1 - lambda_) * gamma3_U)
             constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
             all_constraints.append(constraint)
+
+        print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_stay_3D_depth_partial(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        lambda_low = 0
+        lambda_high = 1
+        for t in t_values:
+            gamma1_L = self.main.gammas(t)[0]
+            gamma2_L = self.main.gammas(t)[1]
+            gamma3_L = self.main.gammas(t)[2]
+            gamma1_U = self.main.gammas(t)[3]
+            gamma2_U = self.main.gammas(t)[4]
+            gamma3_U = self.main.gammas(t)[5]
+
+            x_low = (lambda_low * gamma1_L + (1 - lambda_low) * gamma1_U)
+            y_low = (lambda_low * gamma2_L + (1 - lambda_low) * gamma2_U)
+            z_low = (lambda_low * gamma3_L + (1 - lambda_low) * gamma3_U)
+            constraint_low = z3.And(x_low<self.x2, x_low>self.x1, y_low<self.y2, y_low>self.y1, z_low<self.z2, z_low>self.z1)
+            all_constraints.append(constraint_low)
+
+            x_high = (lambda_high * gamma1_L + (1 - lambda_high) * gamma1_U)
+            y_high = (lambda_high * gamma2_L + (1 - lambda_high) * gamma2_U)
+            z_high = (lambda_high * gamma3_L + (1 - lambda_high) * gamma3_U)
+            constraint_high = z3.And(x_high<self.x2, x_high>self.x1, y_high<self.y2, y_high>self.y1, z_high<self.z2, z_high>self.z1)
+            all_constraints.append(constraint_high)
+
+        print("Added Stay Constraints: ", self.main.setpoints)
+        end = time.time()
+        self.main.displayTime(self.start, end)
+        return all_constraints
+
+    def execute_stay_3D_depth_full(self):
+        self.main.setpoints.append([self.x1, self.x2, self.y1, self.y2, self.z1, self.z2, self.t1, self.t2])
+        all_constraints = []
+        t_values = np.arange(self.t1, self.t2, self.main._step)
+        for t in t_values:
+            for lambda_1 in self.main.lambda_values:
+                for lambda_2 in self.main.lambda_values:
+                    for lambda_3 in self.main.lambda_values:
+                        gamma1_L = self.main.gammas(t)[0]
+                        gamma2_L = self.main.gammas(t)[1]
+                        gamma3_L = self.main.gammas(t)[2]
+                        gamma1_U = self.main.gammas(t)[3]
+                        gamma2_U = self.main.gammas(t)[4]
+                        gamma3_U = self.main.gammas(t)[5]
+
+                        x = (lambda_1 * gamma1_L + (1 - lambda_1) * gamma1_U)
+                        y = (lambda_2 * gamma2_L + (1 - lambda_2) * gamma2_U)
+                        z = (lambda_3 * gamma3_L + (1 - lambda_3) * gamma3_U)
+                        constraint = z3.And(x<self.x2, x>self.x1, y<self.y2, y>self.y1, z<self.z2, z>self.z1)
+                        all_constraints.append(constraint)
+
         print("Added Stay Constraints: ", self.main.setpoints)
         end = time.time()
         self.main.displayTime(self.start, end)
         return all_constraints
 
 
-'''script for STL specifications'''
 class STL():
     '''class to solve STL specifications'''
     _instances = {}
@@ -918,11 +1561,11 @@ class STL():
     def plotter(self):
         self.main.find_solution()
 
+
 class AND(STL):
     def __init__(self, identifier, *instances):
         self.instances = instances
         self.return_value = False
-        self.always = False
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
@@ -931,61 +1574,123 @@ class AND(STL):
 
     def add_resultant(self):
         '''adds constraints'''
-        if self.always == True:
-            for constraints in self.instances:
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND) or isinstance(instance, IMPLIES):
+                instance.return_value = True
+                constraints = instance.call()
                 for constraint in constraints:
                     self.main.solver.add(constraint)
-        else:
-            for constraints in self.instances:
+            elif isinstance(instance, OR):
+                constraints = instance.call()
                 self.main.solver.add(constraints)
+            else:
+                print("Unknown Instance")
 
     def return_resultant(self):
         '''returns constraints'''
-        return self.instances
+        all_constraints =[]
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
+                instance.return_value = True
+                constraints = instance.call()
+                for constraint in constraints:
+                    all_constraints.append(constraint)
+            elif isinstance(instance, OR):
+                constraints = instance.call()
+                all_constraints.append(constraints)
+            else:
+                print("Unknown Instance")
+        return all_constraints
 
     def call(self):
         if self.return_value == True:
-            self.return_resultant()
+            return self.return_resultant()
         else:
             self.add_resultant()
+
 
 class OR(STL):
     def __init__(self, identifier, *instances):
-        self.choice = 0
+        self.choice = None
         self.instances = instances
-        self.return_value = False
+        self.return_value = True
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
-
-    def decide_or(self):
-        or_targets = []
+        
+        self.reach_or_targets = []
+        self.avoid_or_targets = []
+        self.stay_or_targets = []
+        
         for instance in self.instances:
             if isinstance(instance.task, REACH):
-                or_targets.append(instance.task.local_setpoint)
-        print("ors: ", or_targets)
-        goal = [14, 15, 14, 15]
-        self.choice = or_targets.index(self.main.min_distance_element(or_targets, goal))
-        print("choice: ", self.choice)
+                self.reach_or_targets.append(instance.task.local_setpoint)
+            if isinstance(instance.task, AVOID):
+                self.avoid_or_targets.append(instance.task.local_obstacle)
+            if isinstance(instance.task, STAY):
+                self.stay_or_targets.append(instance.task.local_setpoint)
+    
+        self.all_or_targets = self.reach_or_targets + self.avoid_or_targets + self.stay_or_targets
+        self.goal = [3, 4, 3, 4, 3, 4]
 
     def add_resultant(self):
-        '''adds constraints'''
-        constraints = self.instances[self.choice].call()
-        self.main.solver.add(constraints)
+        if self.reach_or_targets != []:
+            print("OR reach-target options: ", self.reach_or_targets)
+            self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            self.main.solver.add(constraints)
+
+        elif self.avoid_or_targets != []:
+            print("OR avoid-target options: ", self.avoid_or_targets)
+            self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            self.main.solver.add(constraints)
+
+        elif self.reach_or_targets != [] and self.avoid_or_targets != []:
+            print("All OR target options: ", self.all_or_targets)
+            self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            self.main.solver.add(constraints)
+
+        else:
+            raise ValueError("No options in 'OR' block!")
 
     def return_resultant(self):
-        '''returns constraints'''
-        constraints = self.instances[self.choice].call()
-        return constraints
+        if self.reach_or_targets != [] and self.avoid_or_targets == []:
+            print("OR reach-target options: ", self.reach_or_targets)
+            self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            return constraints
+
+        elif self.avoid_or_targets != [] and self.reach_or_targets == []:
+            print("OR avoid-target options: ", self.avoid_or_targets)
+            self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            return constraints
+        
+        elif self.reach_or_targets != [] and self.avoid_or_targets != []:
+            print("All OR target options: ", self.all_or_targets)
+            self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
+            print("choice: ", self.choice)
+            constraints = self.instances[self.choice].call()
+            return constraints
+        
+        else:
+            raise ValueError("No options in 'OR' block!")
 
     def call(self):
-        self.decide_or()
         if self.return_value == True:
-            self.return_resultant()
+            return self.return_resultant()
         else:
             self.add_resultant()
+
 
 class NOT(STL):
     def __init__(self, identifier, *instances):
@@ -999,19 +1704,40 @@ class NOT(STL):
 
     def add_resultant(self):
         '''adds constraints'''
-        for constraints in self.instances:
-            for constraint in constraints:
-                self.main.solver.add(z3.Not(constraint))
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
+                instance.return_value = True
+                constraints = instance.call()
+                for constraint in constraints:
+                    self.main.solver.add(z3.Not(constraint))
+            elif isinstance(instance, OR):
+                constraints = instance.call()
+                self.main.solver.add(z3.Not(constraints))
+            else:
+                print("Unknown Instance")
 
     def return_resultant(self):
         '''returns constraints'''
-        return z3.Not(self.instances)
+        all_constraints =[]
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS) or isinstance(instance, AND):
+                instance.return_value = True
+                constraints = instance.call()
+                for constraint in constraints:
+                    all_constraints.append(z3.Not(constraint))
+            elif isinstance(instance, OR):
+                constraints = instance.call()
+                all_constraints.append(z3.Not(constraints))
+            else:
+                print("Unknown Instance")
+        return all_constraints
 
     def call(self):
         if self.return_value == True:
-            self.return_resultant()
+            return self.return_resultant()
         else:
             self.add_resultant()
+
 
 class EVENTUALLY(STL):
     def __init__(self, identifier, t1, t2, task):
@@ -1033,6 +1759,7 @@ class EVENTUALLY(STL):
         else:
             self.main.solver.add(all_constraints)
 
+
 class ALWAYS(STL):
     def __init__(self, identifier, t1, t2, task):
         task.always = True
@@ -1053,270 +1780,273 @@ class ALWAYS(STL):
         else:
             self.main.solver.add(all_constraints)
 
+
 class UNTIL(STL):
-    def __init__(self):
+    def __init__(self, identifier, instance_a, instance_b):
+        self.instance_a = instance_a
+        self.instance_b = instance_b
+        self.return_value = True
+        a_instance = STL.get_instance(identifier)
+        if a_instance:
+            self.main = a_instance.main
+        else:
+            raise ValueError(f"No instance of A found for identifier '{identifier}'")
+
+    def add_resultant(self):
+        '''adds constraints'''
         pass
+
+    def return_resultant(self):
+        '''returns constraints'''
+        pass
+
+    def call(self):
+        if self.return_value == True:
+            return self.return_resultant()
+        else:
+            self.add_resultant()
+
 
 class IMPLIES(STL):
-    def __init__(self) -> None:
-        pass
-
-    def loop(self):
-        pass
-
-    def normal(self):
-        pass
-
-
-'''script to convert stl semantic to executable form'''
-class REACH:
-    def __init__(self, id, start, end, setpoints):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.setpoints = setpoints
-
-    def call(self):
-        return f"REACH([{', '.join(map(str, self.setpoints))}])"
-
-
-class AVOID:
-    def __init__(self, id, start, end, setpoints):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.setpoints = setpoints
-
-    def call(self):
-        return f"AVOID([{', '.join(map(str, self.setpoints))}])"
-
-
-class EVENTUALLY:
-    def __init__(self, id, start, end, operation):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.operation = operation
-
-    def call(self):
-        return f"EVENTUALLY({self.id}, {self.start}, {self.end}, {self.operation})"
-
-
-class ALWAYS:
-    def __init__(self, id, start, end, operation):
-        self.id = id
-        self.start = start
-        self.end = end
-        self.operation = operation
-
-    def call(self):
-        return f"ALWAYS({self.id}, {self.start}, {self.end}, {self.operation})"
-
-
-class OR:
-    def __init__(self, id, *operations):
-        self.id = id
-        self.operations = operations
-
-    def call(self):
-        return f"OR({self.id}, {', '.join(op.call() for op in self.operations)})"
-
-
-class AND:
-    def __init__(self, id, *operations):
-        self.id = id
-        self.operations = operations
-
-    def call(self):
-        return f"AND({self.id}, {', '.join(op.call() for op in self.operations)})"
-
-
-
-class TextToSTL():
-    def __init__(self, text):
-        self.text = text
-        self.final_str = ''
-        self.variable_map = {
-                                'T₁': [0, 1],
-                                'T₂': [2, 3],
-                                'O₁': [5, 6],
-                                'O₂': [0, 1]
-                            }
-
-    def declassify(self, semantic):
-        # Step 1: Remove parentheses and spaces
-        cleaned_string = semantic.strip().replace('(', '').replace(')', '').replace(' ', '')
-
-        # Step 2: Check the operator in the string and split accordingly
-        if '∨' in cleaned_string:
-            # If the operator is '*', split by '*' and use OR
-            variables = cleaned_string.split('∨')
-            return f"OR({', '.join(variables)})"
-        elif '∧' in cleaned_string:
-            # If the operator is '$', split by '$' and use AND
-            variables = cleaned_string.split('∧')
-            return f"AND({', '.join(variables)})"
+    def __init__(self, identifier, instance_a, instance_b):
+        self.instance_a = instance_a
+        self.instance_b = instance_b
+        self.return_value = True
+        a_instance = STL.get_instance(identifier)
+        if a_instance:
+            self.main = a_instance.main
         else:
-            # If neither operator is found, return the input as-is or raise an error
-            return "Invalid input: No valid operator found (* or $)"
+            raise ValueError(f"No instance of A found for identifier '{identifier}'")
 
-    def final(self, temp):
-        exp = temp
-        stack = []
-        for i in range(len(exp)):
-            for j in range (len(exp)):
-                if exp[i] == '(' and exp[j] == ')' and '(' not in exp[i+1:j] and ')' not in exp[i+1:j] and exp[i+1:j] != '':
-                    stack.append(exp[i:j+1])
-        for item in stack:
-            temp = temp.replace(item, self.declassify(item), 1)
-        if '∧' not in temp and '∨' not in temp and '◊' not in temp and '□' not in temp and temp != None:
-            self.final_str = temp
-            print(self.final_str)
-        elif temp == None:
-            print("Done")
+    def call(self):
+        all_constraints_a = []
+        all_constraints_b = []
+        implies_constraint = []
+
+        if isinstance(self.instance_a, EVENTUALLY) or isinstance(self.instance_a, ALWAYS):
+            constraints = self.instance_a.call()
+            for constraint in constraints:
+                all_constraints_a.append(constraint)
+        elif isinstance(self.instance_a, AND):
+            self.instance_a.return_value = True
+            constraints = self.instance_a.call()
+            for constraint in constraints:
+                all_constraints_a.append(constraint)
+        elif isinstance(self.instance_a, OR):
+            constraints = self.instance_a.call()
+            all_constraints_a.append(constraints)
         else:
-            self.final(temp)
-        return self.final_str
+            print("Unknown Instance")
 
-    # Helper function to parse and convert the string
-    def parse_expression(self, expression, id=1):
-        # Remove whitespaces around brackets for cleaner parsing
-        expression = re.sub(r'\s*,\s*', ',', expression)  # Normalize commas
-        expression = re.sub(r'\s*\[\s*', '[', expression)  # Normalize brackets
+        if isinstance(self.instance_b, EVENTUALLY) or isinstance(self.instance_b, ALWAYS):
+            constraints = self.instance_b.call()
+            for constraint in constraints:
+                all_constraints_b.append(constraint)
+        elif isinstance(self.instance_b, AND):
+            self.instance_b.return_value = True
+            constraints = self.instance_b.call()
+            for constraint in constraints:
+                all_constraints_b.append(constraint)
+        elif isinstance(self.instance_b, OR):
+            constraints = self.instance_b.call()
+            all_constraints_b.append(constraints)
+        else:
+            print("Unknown Instance")
 
-        def extract_arguments(inner_expr):
-            """Extracts arguments within brackets and returns them as a list."""
-            stack = []
-            result = []
-            temp = ""
-            for char in inner_expr:
-                if char == ',' and not stack:
-                    result.append(temp.strip())
-                    temp = ""
-                else:
-                    temp += char
-                    if char == '[':
-                        stack.append('[')
-                    elif char == ']':
-                        stack.pop()
-            if temp:
-                result.append(temp.strip())
-            return result
+        for i in range(len(all_constraints_a)):
+            for j in range(len(all_constraints_b)):
+                implies_constraint.append(z3.Or(z3.Not(all_constraints_a[i]), all_constraints_b[j]))
 
-        # Recursively build the expression tree
-        def build_expression(expr, id):
-            # Match different operations
-            if expr.startswith("AND["):
-                args = extract_arguments(expr[4:-1])
-                return AND(id, *[build_expression(arg, id) for arg in args])
-            elif expr.startswith("OR["):
-                args = extract_arguments(expr[3:-1])
-                return OR(id, *[build_expression(arg, id) for arg in args])
-            elif expr.startswith("ALWAYS AVOID"):
-                args = extract_arguments(expr[12:-1])
-                start, end = 2, 3  # Set default or inferred values
-                setpoints = self.variable_map.get(args[0], [0])  # Map the argument to setpoints
-                return ALWAYS(id, start, end, AVOID(id, start, end, setpoints).call())
-            elif expr.startswith("EVENTUALLY"):
-                args = extract_arguments(expr[11:-1])
-                start, end = 0, 1  # Set default or inferred values
-                setpoints = self.variable_map.get(args[0], [0])  # Map the argument to setpoints
-                return EVENTUALLY(id, start, end, REACH(id, start, end, setpoints).call())
-            else:
-                raise ValueError(f"Unknown expression format: {expr}")
-
-        return build_expression(expression, id).call()
-
-    def create_and_run_python_file(self, file_name, content):
-        # Step 1: Create the Python file and write the content to it
-        with open(file_name, 'w') as f:
-            f.write(content)
-
-        print(f"{file_name} created successfully!")
-
-        # Step 2: Run the newly created Python file
-        try:
-            # For Windows: use 'python' instead of 'python3'
-            result = subprocess.run(['python3', file_name], capture_output=True, text=True)
-            print("Output of the script:")
-            print(result.stdout)
-            if result.stderr:
-                print("Errors:")
-                print(result.stderr)
-        except Exception as e:
-            print(f"Failed to run the script: {e}")
-
-    def execute(self):
-        parsed_output = self.parse_expression(self.final(self.text))
-        # print(parsed_output)
-
-        # Example usage
-        file_name = 'test_script.py'
-        content = '''#!/usr/bin/env python3
-# This is an automatically generated Python script
-from solver import *
-from stl_main import *
-from text_to_stl import *
-from action_classes import *
-from error_handling import *
-from seq_reach_avoid_stay import *
-print("Hello from the new Python file!")
-x = 5
-y = 10
-print(f"The sum of {x} and {y} is: {x + y}")
-obj = ''' + parsed_output
-
-        self.create_and_run_python_file(file_name, content)
-
-x = TextToSTL('((◊ T₁ ∨ ◊ T₂ ∨ ◊ T₃) ∧ (□ ¬ O₁ ∧ □ ¬ O₂ ∧ □ ¬ O₃))')
-
-x1 = x.final(x.text)
-print(x1)
-# parsed_output = x.parse_expression(x1)
-# print(parsed_output)
-# x.execute()
-
-# final('((◊ T₁ ∨ ◊ T₂) ∧ (□ ¬ O₁ ∧ □ ¬ O₂))')
+        if self.return_value == True:
+            return implies_constraint
+        else:
+            for i in implies_constraint:
+                self.main.solver.add(i)
 
 
-'''script to test STL specifications'''
-
-stl2 = STL(1, SeqReachAvoidStay(5, 2, 0.05, 1))
-# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3)).call()).call()
+stl2 = STL(1, SeqReachAvoidStay(12, 2, 0.1, 1))
+# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3))).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3)).call()).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3)).call()).call()
 
-
-# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), 
-#             EVENTUALLY(1, 3, 4, REACH(stl2.main, 3, 4, 11, 12)).call(),
-#             EVENTUALLY(1, 11, 12, REACH(stl2.main, 3, 12, 3, 4)).call(),
-#             # EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call(), 
-#                 # ALWAYS(1, 7, 8, AVOID(stl2.main, 7, 8, 7, 8)).call()
-#                 ).call()
-
-# constraints = [EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), 
-#                EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)).call(),
-#                EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)).call(),
-#                EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()]
-
-# # print(constraints)
-
-# for i in constraints:
-#     # for j in i:
-#     stl2.main.solver.add(i)
-
-obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), 
-            EVENTUALLY(1, 2, 3, REACH(stl2.main, 2, 3, 2, 3)).call(),
-            EVENTUALLY(1, 7, 8, REACH(stl2.main, 7, 8, 7, 8)).call(),
-            EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call()
+#------------ DRONE CASE------------#
+# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, -1, 2, -1, 2, 1, 4)), 
+#             EVENTUALLY(1, 14, 15, REACH(stl2.main, 12, 15, 12, 15, 12, 15)),
+#             OR(1, EVENTUALLY(1, 7, 8, REACH(stl2.main, 9, 12, 6, 9, 6, 9)), 
+#                     EVENTUALLY(1, 7, 8, REACH(stl2.main, 3, 6, 6, 9, 6, 9))
+#                 ),
+#             ALWAYS(1, 0, 15, AVOID(stl2.main, 6, 9, 6, 11, 0, 15)),
+#         ).call()
+#-----------------------------------#
 
 
-# obj3 = AND(1, EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15)).call()).call()
-# obj4 = AND(1, EVENTUALLY(1, 1, 2, REACH(stl2.main, 1, 2, 1, 2)).call()).call()
+#------ ALWAYS EVENTUALLY CASE -----#
+# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
+#                EVENTUALLY(1, 3, 4, REACH(stl2.main, 7, 8, 11, 12)),
+#                EVENTUALLY(1, 6, 7, REACH(stl2.main, 10, 11, 7, 8)),
+#                EVENTUALLY(1, 9, 10, REACH(stl2.main, 7, 8, 11, 12)),
+#                EVENTUALLY(1, 12, 13, REACH(stl2.main, 11, 12, 7, 8)),
+#                EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15))
+#             ).call()
+#-----------------------------------#
+
 stl2.plotter()
 
-# need to add or constraints properly
-# the call() method has to be timed correctly
-# toolbox has zero error, i.e. all semantics must start from zero (plotting issue)
-# OR constraints are a mess, also need to handle for OR AND concatenation
-# dead
+
+
+                #####        #####       #####       #######
+               ##   ##      ##   ##      ##  ##      ##  
+              ##           ##     ##     ##   ##     #### 
+              ##           ##     ##     ##   ##     ####
+               ##   ##      ##   ##      ##  ##      ## 
+                #####        #####       #####       #######
+
+######      ##     ##     ###    ##     ###    ##     ##     ###    ##     #####
+##   ##     ##     ##     ####   ##     ####   ##     ##     ####   ##    ##
+##   ##     ##     ##     ## ##  ##     ## ##  ##     ##     ## ##  ##   ##
+## ##       ##     ##     ##  ## ##     ##  ## ##     ##     ##  ## ##   ##   ### 
+##  ##       ##   ##      ##   ####     ##   ####     ##     ##   ####    ##   ##
+##   ##       #####       ##    ###     ##    ###     ##     ##    ###     #####
+
+
+
+
+
+
+# -------------------------------------- ALWAYS-EVENTUALLY EXAMPLE -------------------------------------- #
+# Reach Constraints:  [[0, 1, 0, 1, 0, 1], [7, 8, 11, 12, 3, 4], [10, 11, 7, 8, 6, 7], [7, 8, 11, 12, 9, 10], [11, 12, 7, 8, 12, 13], [14, 15, 14, 15, 14, 15]]
+# C0 = 0.08333333333333333
+# C1 = -5.817436030541716
+# C2 = 18.42434361623948
+# C3 = -13.95526959737941
+# C4 = 5.298201103203326
+# C5 = -1.1646603810073652
+# C6 = 0.15232477853262447
+# C7 = -0.010408960326033685
+# C8 = 0.0
+# C9 = 6.641565062178928e-05
+# C10 = -5.7836284132781364e-06
+# C11 = 2.2218992013231217e-07
+# C12 = -3.3709706402282637e-09
+# C13 = 0.08333333333333333
+# C14 = -0.5644011695585874
+# C15 = 1.4730509589736605
+# C16 = 1.7656366115500863
+# C17 = -0.9428363835173661
+# C18 = 0.04409656710255154
+# C19 = 0.057870859988860546
+# C20 = -0.01664561149694609
+# C21 = 0.002216675443836667
+# C22 = -0.00016877638634275402
+# C23 = 7.509226919078036e-06
+# C24 = -1.8073326755822833e-07
+# C25 = 1.797148064281541e-09
+# C26 = 0.9166666666666666
+# C27 = -8.03045020496731
+# C28 = 23.8758114499262
+# C29 = -19.114204479901467
+# C30 = 7.866317700941796
+# C31 = -1.9403011149956013
+# C32 = 0.30536754431523905
+# C33 = -0.03088014010876313
+# C34 = 0.0018780373654999922
+# C35 = -5.0357461614743235e-05
+# C36 = -1.0682350059652324e-06
+# C37 = 1.1039516193943358e-07
+# C38 = -2.188198426960021e-09
+# C39 = 0.6666666666666666
+# C40 = -0.4762809678792631
+# C41 = 1.088734647470142
+# C42 = 2.3708487659866515
+# C43 = -1.4121941399387143
+# C44 = 0.25305617203885217
+# C45 = 0.0
+# C46 = -0.006254620144161909
+# C47 = 0.000988294758218591
+# C48 = -7.394827589892189e-05
+# C49 = 2.911844965333087e-06
+# C50 = -5.374330168041333e-08
+# C51 = 2.730628516158349e-10
+
+# -------------------------------------- DRONE EXAMPLE -------------------------------------- #
+
+#------------------ DRONE OR CASE FIRST BLOCK ------------------#
+# Reach Constraints:  [[-1, 2, -1, 2, 1, 4, 0, 1], [12, 15, 12, 15, 12, 15, 14, 15], [9, 12, 6, 9, 6, 9, 7, 8]]
+# Avoid Constraints:  [[6, 9, 6, 11, 0, 15, 0, 15]]
+# C0 = -0.5092201124440394
+# C1 = -1.665740011109661
+# C2 = 1.542484516723121
+# C3 = -0.3243109601139466
+# C4 = 0.026244366716944464
+# C5 = -0.0007154516946045534
+# C6 = -0.5092201124440394
+# C7 = -0.9354351139789893
+# C8 = 0.8798053580061804
+# C9 = -0.15421328533867962
+# C10 = 0.011825144550615181
+# C11 = -0.00032995786104859844
+# C12 = 1.4907798875559606
+# C13 = -0.14819509743468093
+# C14 = 0.32437796115886813
+# C15 = -0.058556349964849215
+# C16 = 0.0052465859553120706
+# C17 = -0.0001699023672777245
+# C18 = 1.9953899437779803
+# C19 = -1.6883828104673564
+# C20 = 1.5955854133448955
+# C21 = -0.34080413875938786
+# C22 = 0.02799927661790214
+# C23 = -0.0007749401658234577
+# C24 = 1.9953899437779803
+# C25 = -0.9354351139789893
+# C26 = 0.8798053580061804
+# C27 = -0.15421328533867962
+# C28 = 0.011825144550615181
+# C29 = -0.00032995786104859844
+# C30 = 3.99538994377798
+# C31 = -0.14819509743468093
+# C32 = 0.32437796115886813
+# C33 = -0.058556349964849215
+# C34 = 0.0052465859553120706
+# C35 = -0.0001699023672777245
+
+
+#------------------ DRONE OR CASE SECOND BLOCK ------------------#
+# Reach Constraints:  [[-1, 2, -1, 2, 1, 4, 0, 1], [12, 15, 12, 15, 12, 15, 14, 15], [9, 12, 6, 9, 6, 9, 7, 8]]
+# Avoid Constraints:  [[6, 9, 6, 9, 0, 15, 0, 15]]
+# C0 = -0.9947193621508238
+# C1 = 0.4277863285546202
+# C2 = 1.2140297298487956
+# C3 = -0.27679682188266586
+# C4 = 0.02200792560735738
+# C5 = -0.0005888928692527835
+# C6 = -0.5105612756983524
+# C7 = -1.4667281217292212
+# C8 = 1.0843122115171406
+# C9 = -0.18152804910001696
+# C10 = 0.013280466284529367
+# C11 = -0.0003552471176615102
+# C12 = 1.4894387243016476
+# C13 = -1.27618875247245
+# C14 = 0.655150320834794
+# C15 = -0.08099965733727106
+# C16 = 0.004422992408222249
+# C17 = -8.864906559813607e-05
+# C18 = 1.5105612756983524
+# C19 = 0.4277863285546202
+# C20 = 1.2140297298487956
+# C21 = -0.27679682188266586
+# C22 = 0.02200792560735738
+# C23 = -0.0005888928692527835
+# C24 = 1.994719362150824
+# C25 = -1.4667281217292212
+# C26 = 1.0843122115171406
+# C27 = -0.18152804910001696
+# C28 = 0.013280466284529367
+# C29 = -0.0003552471176615102
+# C30 = 3.994719362150824
+# C31 = -1.27618875247245
+# C32 = 0.655150320834794
+# C33 = -0.08099965733727106
+# C34 = 0.004422992408222249
+# C35 = -8.864906559813607e-05
