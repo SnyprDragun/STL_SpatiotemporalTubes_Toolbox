@@ -206,9 +206,9 @@ class SeqReachAvoidStay():
 
         fig2 = plt.figure(2)
         dx = fig2.add_subplot(111, projection='3d')
-        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
-        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
-        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlim(0, 20) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 20) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 20) ## dx.set_zlim(self.getStart(), self.getFinish())
         dx.set_xlabel('X Axis')
         dx.set_ylabel('Y Axis')
         dx.set_zlabel('Time Axis')
@@ -455,6 +455,7 @@ class SeqReachAvoidStay():
                 self.plot_for_2D(C_fin)
             else:
                 self.plot_for_3D(C_fin)
+            self.print_equation(C_fin)
 
             end = time.time()
             self.displayTime(start, end)
@@ -465,6 +466,15 @@ class SeqReachAvoidStay():
             print("range: ", self.getRange(), "\nstart: ", self.getStart(), "\nfinish: ", self.getFinish(), "\nstep: ", self._step)
             end = time.time()
             self.displayTime(start, end)
+
+    def print_equation(self, C):
+        for i in range(2 * self.dimension):
+            print("gamma", i, "= ", end = "")
+            power = 0
+            for j in range(self.degree + 1):
+                print("C", j + i * (self.degree + 1), "* t.^", power, "+ ", end = "")
+                power += 1
+            print("\n")
 
     def test_plot(self):
         '''method to plot the tubes'''
