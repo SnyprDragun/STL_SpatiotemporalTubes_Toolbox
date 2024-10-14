@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/homebrew/bin/python3.11
 '''script to try out various code snippets'''
 
 ########################################## to print all z3 solutions ##########################################
@@ -1550,47 +1550,47 @@
 
 #########################################
 
-def declassify(semantic):
-    i_pos = 0
-    count = 0
-    for i in semantic:
-        if i == '∧':
-            semantic = semantic.replace(i, ',')
-            semantic = 'AND[' + semantic[1:len(semantic) - 1] + ']'
-        if i == '∨':
-            semantic = semantic.replace(i, ',')
-            semantic = 'OR[' + semantic[1:len(semantic) - 1] + ']'
-        if i == '◊':
-            semantic = semantic.replace(i, 'EVENTUALLY')
-        if i == '□':
-            semantic = semantic.replace(i, 'ALWAYS')
-        if i == '¬':
-            semantic = semantic.replace(i, 'AVOID')
-    return semantic
+# def declassify(semantic):
+#     i_pos = 0
+#     count = 0
+#     for i in semantic:
+#         if i == '∧':
+#             semantic = semantic.replace(i, ',')
+#             semantic = 'AND[' + semantic[1:len(semantic) - 1] + ']'
+#         if i == '∨':
+#             semantic = semantic.replace(i, ',')
+#             semantic = 'OR[' + semantic[1:len(semantic) - 1] + ']'
+#         if i == '◊':
+#             semantic = semantic.replace(i, 'EVENTUALLY')
+#         if i == '□':
+#             semantic = semantic.replace(i, 'ALWAYS')
+#         if i == '¬':
+#             semantic = semantic.replace(i, 'AVOID')
+#     return semantic
 
 
-# print(declassify('((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))'))
-# print(declassify('(O₁ ∧ O₂)'))
-# print(declassify('(◊ T₁ ∨ ◊ T₂)'))
+# # print(declassify('((◊ T₁ ∨ ◊ T₂) ∧ □ ¬ (O₁ ∧ O₂))'))
+# # print(declassify('(O₁ ∧ O₂)'))
+# # print(declassify('(◊ T₁ ∨ ◊ T₂)'))
 
 
-def final(temp):
-    exp = temp
-    stack = []
-    for i in range(len(exp)):
-        for j in range (len(exp)):
-            if exp[i] == '(' and exp[j] == ')' and '(' not in exp[i+1:j] and ')' not in exp[i+1:j] and exp[i+1:j] != '':
-                stack.append(exp[i:j+1])
-    # print(stack)
-    for item in stack:
-        temp = temp.replace(item, declassify(item), 1)
-    print(temp)
-    if '∧' not in temp:
-        print(temp)
-        final_str = temp
-    else:
-        final(temp)
-    return final_str
+# def final(temp):
+#     exp = temp
+#     stack = []
+#     for i in range(len(exp)):
+#         for j in range (len(exp)):
+#             if exp[i] == '(' and exp[j] == ')' and '(' not in exp[i+1:j] and ')' not in exp[i+1:j] and exp[i+1:j] != '':
+#                 stack.append(exp[i:j+1])
+#     # print(stack)
+#     for item in stack:
+#         temp = temp.replace(item, declassify(item), 1)
+#     print(temp)
+#     if '∧' not in temp:
+#         print(temp)
+#         final_str = temp
+#     else:
+#         final(temp)
+#     return final_str
 
 # final('((◊ T₁ ∨ ◊ T₂) ∧ (□ ¬ O₁ ∧ □ ¬ O₂))')
 
@@ -1943,3 +1943,118 @@ def final(temp):
 # l1 = [[1,2]]
 # l2 = [[3,4]]
 # print(l1+l2)
+
+
+# import re
+
+# def remove_brackets_and_print_words(input_str):
+#     stages = [input_str]
+    
+#     while '(' in stages[-1] or ')' in stages[-1]:
+#         # Find all innermost bracketed content
+#         innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
+#         print("Words inside the innermost brackets:", ', '.join(innermost_content))
+        
+#         # Replace innermost brackets with their content
+#         new_stage = re.sub(r'\(([^()]+)\)', r'\1', stages[-1])
+#         stages.append(new_stage)
+    
+#     return stages
+
+# # Test the function
+# input_str = "(some (english) word (is (written)) here)"
+# stages = remove_brackets_and_print_words(input_str)
+# for i, stage in enumerate(stages, 1):
+#     print(f"Stage {i}: {stage}")
+
+
+# import re
+
+# def evaluate(phrase):
+#     # Check for '*' and replace with AND[...] if found
+#     if '*' in phrase:
+#         parts = phrase.split('*')
+#         # Strip and join the parts into the desired format
+#         evaluated = f"AND[{', '.join(part.strip() for part in parts)}]"
+#         return evaluated
+#     return phrase
+
+# def remove_brackets_and_evaluate(input_str):
+#     stages = [input_str]
+    
+#     while '(' in stages[-1] or ')' in stages[-1]:
+#         # Find all innermost bracketed content
+#         innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
+#         evaluated_content = [evaluate(content) for content in innermost_content]
+        
+#         # Print evaluated contents
+#         print("Evaluated content:", ', '.join(evaluated_content))
+        
+#         # Replace innermost brackets with evaluated content
+#         new_stage = stages[-1]
+#         for original, evaluated in zip(innermost_content, evaluated_content):
+#             new_stage = new_stage.replace(f"({original})", evaluated, 1)
+            
+#         stages.append(new_stage)
+    
+#     return stages
+
+# # Test the function
+# input_str = "(good ((examples * are) * (rare)))"
+# stages = remove_brackets_and_evaluate(input_str)
+# for i, stage in enumerate(stages, 1):
+#     print(f"Stage {i}: {stage}")
+
+
+import re
+
+def evaluate(phrase):
+    # Check for each symbol and replace accordingly
+    if '*' in phrase:
+        parts = phrase.split('*')
+        evaluated = f"AND[{', '.join(part.strip() for part in parts)}]"
+    elif '%' in phrase:
+        parts = phrase.split('%')
+        evaluated = f"OR[{', '.join(part.strip() for part in parts)}]"
+    elif '$' in phrase:
+        parts = phrase.split('$')
+        evaluated = f"EVENTUALLY[{', '.join(part.strip() for part in parts)}]"
+    elif '#' in phrase:
+        parts = phrase.split('#')
+        evaluated = f"ALWAYS[{', '.join(part.strip() for part in parts)}]"
+    elif '@' in phrase:
+        parts = phrase.split('@')
+        evaluated = f"REACH[{', '.join(part.strip() for part in parts)}]"
+    elif '&' in phrase:
+        parts = phrase.split('&')
+        evaluated = f"AVOID[{', '.join(part.strip() for part in parts)}]"
+    else:
+        evaluated = phrase  # No special symbol found, return as is
+    
+    return evaluated
+
+def remove_brackets_and_evaluate(input_str):
+    stages = [input_str]
+    
+    while '(' in stages[-1] or ')' in stages[-1]:
+        # Find all innermost bracketed content
+        innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
+        evaluated_content = [evaluate(content) for content in innermost_content]
+        
+        # Print evaluated contents
+        print("Evaluated content:", ', '.join(evaluated_content))
+        
+        # Replace innermost brackets with evaluated content
+        new_stage = stages[-1]
+        for original, evaluated in zip(innermost_content, evaluated_content):
+            new_stage = new_stage.replace(f"({original})", evaluated, 1)
+            
+        stages.append(new_stage)
+    
+    return stages
+
+# Test the function
+input_str = "(good (examples % are taken) (to $ find) (for # all) (and @ reach) (but & avoid) rare)"
+stages = remove_brackets_and_evaluate(input_str)
+for i, stage in enumerate(stages, 1):
+    print(f"Stage {i}: {stage}")

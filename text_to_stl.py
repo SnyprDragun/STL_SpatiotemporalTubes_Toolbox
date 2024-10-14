@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/homebrew/bin/python3.11
 '''script to convert stl semantic to executable form'''
 import os
 import re
@@ -120,7 +120,6 @@ class TextToSTL():
             self.final(temp)
         return self.final_str
 
-    # Helper function to parse and convert the string
     def parse_expression(self, expression, id=1):
         # Remove whitespaces around brackets for cleaner parsing
         expression = re.sub(r'\s*,\s*', ',', expression)  # Normalize commas
