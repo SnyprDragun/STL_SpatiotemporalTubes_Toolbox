@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #!/opt/homebrew/bin/python3.11
 '''script to try out various code snippets'''
 
@@ -2053,11 +2052,19 @@
 import re
 
 def evaluate(phrase):
-    # Handle the EVENTUALLY symbol
-    phrase = phrase.replace('◊', 'EVENUTUALLY')
+    # Handle the EVENTUALLY, ALWAYS, and AVOID symbols
+    phrase = phrase.replace('◊', 'EVENTUALLY')
     phrase = phrase.replace('□', 'ALWAYS')
-    phrase = phrase.replace('¬', 'AVOID')
     
+    # Handle negations, wrapping ¬ Oₓ as [AVOID[Oₓ]]
+    phrase = re.sub(r'¬\s*(O\d+)', r'[AVOID[\1]]', phrase)
+    
+    # Replace T_x terms with REACH[T_x] only if not already wrapped in REACH[]
+    phrase = re.sub(r'\b(T\d+)\b(?!\])', r'REACH[\1]', phrase)
+
+    # Wrap REACH[Tₓ] with [REACH[Tₓ]]
+    phrase = re.sub(r'REACH\[(T\d+)\]', r'[REACH[\1]]', phrase)
+
     # Check for each symbol and replace accordingly
     if '∧' in phrase:
         parts = phrase.split('∧')
@@ -2090,8 +2097,56 @@ def remove_brackets_and_evaluate(input_str):
     
     return stages
 
+def replace_brackets(input_str):
+    # Replace [ with ( and ] with )
+    output_str = input_str.replace('[', '(').replace(']', ')')
+    return output_str
+
 # Test the function
-input_str = "((◊ T₁ ∨ ◊ T₂ ∨ ◊ T₃) ∧ (□ ¬ O₁ ∧ □ ¬ O₂ ∧ □ ¬ O₃))"
-stages = remove_brackets_and_evaluate(input_str)
-for i, stage in enumerate(stages, 1):
-    print(f"Stage {i}: {stage}")
+# test_str = "AND[OR[EVENTUALLY [REACH[T1]], EVENTUALLY [REACH[T2]], EVENTUALLY [REACH[T3]]], AND[ALWAYS [AVOID[O1]], ALWAYS [AVOID[O2]], ALWAYS [AVOID[O3]]]]"
+# result = replace_brackets(test_str)
+# print(result)
+
+def replace_symbols_with_counter(input_str, num):
+    # Replace AND[ with AND[num,
+    output_str = input_str.replace('AND[', f'AND[{num},')
+    # Replace OR[ with OR[num,
+    output_str = output_str.replace('OR[', f'OR[{num},')
+    # Replace EVENTUALLY[ with EVENTUALLY[num,
+    output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{num},')
+    # Replace ALWAYS[ with ALWAYS[num,
+    output_str = output_str.replace('ALWAYS[', f'ALWAYS[{num},')
+    
+    return output_str
+
+
+def remove_spaces(input_str):
+    # Remove all spaces from the string
+    return input_str.replace(' ', '')
+
+
+# Test the function
+test_str = "AND[OR[EVENTUALLY [REACH[T1]], EVENTUALLY [REACH[T2]], EVENTUALLY [REACH[T3]]], AND[ALWAYS [AVOID[O1]], ALWAYS [AVOID[O2]], ALWAYS [AVOID[O3]]]]"
+num_choice = 5  # Example: replace with number 5
+result = replace_symbols_with_counter(remove_spaces(test_str), num_choice)
+print(result)
+
+
+
+
+# Test the function
+# test_str = "AND[ OR[ EVENTUALLY [ REACH[ T1 ] ], EVENTUALLY [ REACH[ T2 ] ], EVENTUALLY [ REACH[ T3 ] ] ], AND[ ALWAYS [ AVOID[ O1 ] ], ALWAYS [ AVOID[ O2 ] ], ALWAYS [ AVOID[ O3 ] ] ] ]"
+# result = remove_spaces(test_str)
+# # print(result)
+
+# # Test the function
+# # test_str = "AND[OR[EVENTUALLY [REACH[T1]], EVENTUALLY [REACH[T2]], EVENTUALLY [REACH[T3]]], AND[ALWAYS [AVOID[O1]], ALWAYS [AVOID[O2]], ALWAYS [AVOID[O3]]]]"
+# result = replace_symbols_with_counter(result)
+# print(result)
+
+
+# # Test the function
+# input_str = "(((◊ T1 ∨ ◊ T2) ∨ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
+# stages = remove_brackets_and_evaluate(input_str)
+# for i, stage in enumerate(stages, 1):
+#     print(f"Stage {i}: {stage}")
