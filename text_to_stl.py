@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/python3.11
+#!/usr/bin/env python3
 '''script to convert stl semantic to executable form'''
 import os
 import re

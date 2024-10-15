@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #!/opt/homebrew/bin/python3.11
 '''script to try out various code snippets'''
 
@@ -2006,28 +2007,64 @@
 #     print(f"Stage {i}: {stage}")
 
 
+# import re
+
+# def evaluate(phrase):
+#     # Check for each symbol and replace accordingly
+#     if '∧' in phrase:
+#         parts = phrase.split('∧')
+#         evaluated = f"AND[{', '.join(part.strip() for part in parts)}]"
+#     elif '∨' in phrase:
+#         parts = phrase.split('∨')
+#         evaluated = f"OR[{', '.join(part.strip() for part in parts)}]"
+#     else:
+#         evaluated = phrase  # No special symbol found, return as is
+    
+#     return evaluated
+
+# def remove_brackets_and_evaluate(input_str):
+#     stages = [input_str]
+    
+#     while '(' in stages[-1] or ')' in stages[-1]:
+#         # Find all innermost bracketed content
+#         innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
+#         evaluated_content = [evaluate(content) for content in innermost_content]
+        
+#         # Print evaluated contents
+#         print("Evaluated content:", ', '.join(evaluated_content))
+        
+#         # Replace innermost brackets with evaluated content
+#         new_stage = stages[-1]
+#         for original, evaluated in zip(innermost_content, evaluated_content):
+#             new_stage = new_stage.replace(f"({original})", evaluated, 1)
+            
+#         stages.append(new_stage)
+    
+#     return stages
+
+# # Test the function
+# # input_str = "(good (examples % are taken) (to $ find) (for # all) (and @ reach) (but & avoid) rare)"
+# input_str = "((◊ T₁ ∨ ◊ T₂ ∨ ◊ T₃) ∧ (□ ¬ O₁ ∧ □ ¬ O₂ ∧ □ ¬ O₃))"
+# stages = remove_brackets_and_evaluate(input_str)
+# for i, stage in enumerate(stages, 1):
+#     print(f"Stage {i}: {stage}")
+
+
 import re
 
 def evaluate(phrase):
+    # Handle the EVENTUALLY symbol
+    phrase = phrase.replace('◊', 'EVENUTUALLY')
+    phrase = phrase.replace('□', 'ALWAYS')
+    phrase = phrase.replace('¬', 'AVOID')
+    
     # Check for each symbol and replace accordingly
-    if '*' in phrase:
-        parts = phrase.split('*')
+    if '∧' in phrase:
+        parts = phrase.split('∧')
         evaluated = f"AND[{', '.join(part.strip() for part in parts)}]"
-    elif '%' in phrase:
-        parts = phrase.split('%')
+    elif '∨' in phrase:
+        parts = phrase.split('∨')
         evaluated = f"OR[{', '.join(part.strip() for part in parts)}]"
-    elif '$' in phrase:
-        parts = phrase.split('$')
-        evaluated = f"EVENTUALLY[{', '.join(part.strip() for part in parts)}]"
-    elif '#' in phrase:
-        parts = phrase.split('#')
-        evaluated = f"ALWAYS[{', '.join(part.strip() for part in parts)}]"
-    elif '@' in phrase:
-        parts = phrase.split('@')
-        evaluated = f"REACH[{', '.join(part.strip() for part in parts)}]"
-    elif '&' in phrase:
-        parts = phrase.split('&')
-        evaluated = f"AVOID[{', '.join(part.strip() for part in parts)}]"
     else:
         evaluated = phrase  # No special symbol found, return as is
     
@@ -2054,7 +2091,7 @@ def remove_brackets_and_evaluate(input_str):
     return stages
 
 # Test the function
-input_str = "(good (examples % are taken) (to $ find) (for # all) (and @ reach) (but & avoid) rare)"
+input_str = "((◊ T₁ ∨ ◊ T₂ ∨ ◊ T₃) ∧ (□ ¬ O₁ ∧ □ ¬ O₂ ∧ □ ¬ O₃))"
 stages = remove_brackets_and_evaluate(input_str)
 for i, stage in enumerate(stages, 1):
     print(f"Stage {i}: {stage}")
