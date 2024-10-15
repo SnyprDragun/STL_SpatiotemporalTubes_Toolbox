@@ -71,6 +71,40 @@ class TextToSTL():
 
         print(self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1]), 1)))
 
+    def create_and_run_python_file(self, file_name, content):
+        with open(file_name, 'w') as f:
+            f.write(content)
+        print(f"{file_name} created successfully!")
+
+        try:
+            result = subprocess.run(['python3', file_name], capture_output=True, text=True)
+            print("Output of the script:")
+            print(result.stdout)
+            if result.stderr:
+                print("Errors:")
+                print(result.stderr)
+        except Exception as e:
+            print(f"Failed to run the script: {e}")
+
+    def execute(self):
+        parsed_output = self.parse_expression(self.final(self.text))
+        file_name = 'test_script.py'
+        content = '''#!/usr/bin/env python3
+# This is an automatically generated Python script
+from solver import *
+from stl_main import *
+from text_to_stl import *
+from action_classes import *
+from error_handling import *
+from seq_reach_avoid_stay import *
+print("Hello from the new Python file!")
+x = 5
+y = 10
+print(f"The sum of {x} and {y} is: {x + y}")
+obj = ''' + parsed_output
+
+        self.create_and_run_python_file(file_name, content)
+
 
 semantic = "(((◊ T1 ∨ ◊ T2) ∨ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
 x = TextToSTL(semantic)
