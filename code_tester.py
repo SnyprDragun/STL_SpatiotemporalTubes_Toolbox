@@ -2049,87 +2049,87 @@
 #     print(f"Stage {i}: {stage}")
 
 
-import re
+# import re
 
-def evaluate(phrase):
-    # Handle the EVENTUALLY, ALWAYS, and AVOID symbols
-    phrase = phrase.replace('◊', 'EVENTUALLY')
-    phrase = phrase.replace('□', 'ALWAYS')
+# def evaluate(phrase):
+#     # Handle the EVENTUALLY, ALWAYS, and AVOID symbols
+#     phrase = phrase.replace('◊', 'EVENTUALLY')
+#     phrase = phrase.replace('□', 'ALWAYS')
     
-    # Handle negations, wrapping ¬ Oₓ as [AVOID[Oₓ]]
-    phrase = re.sub(r'¬\s*(O\d+)', r'[AVOID[\1]]', phrase)
+#     # Handle negations, wrapping ¬ Oₓ as [AVOID[Oₓ]]
+#     phrase = re.sub(r'¬\s*(O\d+)', r'[AVOID[\1]]', phrase)
     
-    # Replace T_x terms with REACH[T_x] only if not already wrapped in REACH[]
-    phrase = re.sub(r'\b(T\d+)\b(?!\])', r'REACH[\1]', phrase)
+#     # Replace T_x terms with REACH[T_x] only if not already wrapped in REACH[]
+#     phrase = re.sub(r'\b(T\d+)\b(?!\])', r'REACH[\1]', phrase)
 
-    # Wrap REACH[Tₓ] with [REACH[Tₓ]]
-    phrase = re.sub(r'REACH\[(T\d+)\]', r'[REACH[\1]]', phrase)
+#     # Wrap REACH[Tₓ] with [REACH[Tₓ]]
+#     phrase = re.sub(r'REACH\[(T\d+)\]', r'[REACH[\1]]', phrase)
 
-    # Check for each symbol and replace accordingly
-    if '∧' in phrase:
-        parts = phrase.split('∧')
-        evaluated = f"AND[{', '.join(part.strip() for part in parts)}]"
-    elif '∨' in phrase:
-        parts = phrase.split('∨')
-        evaluated = f"OR[{', '.join(part.strip() for part in parts)}]"
-    else:
-        evaluated = phrase  # No special symbol found, return as is
+#     # Check for each symbol and replace accordingly
+#     if '∧' in phrase:
+#         parts = phrase.split('∧')
+#         evaluated = f"AND[{', '.join(part.strip() for part in parts)}]"
+#     elif '∨' in phrase:
+#         parts = phrase.split('∨')
+#         evaluated = f"OR[{', '.join(part.strip() for part in parts)}]"
+#     else:
+#         evaluated = phrase  # No special symbol found, return as is
     
-    return evaluated
+#     return evaluated
 
-def remove_brackets_and_evaluate(input_str):
-    stages = [input_str]
+# def remove_brackets_and_evaluate(input_str):
+#     stages = [input_str]
     
-    while '(' in stages[-1] or ')' in stages[-1]:
-        # Find all innermost bracketed content
-        innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
-        evaluated_content = [evaluate(content) for content in innermost_content]
+#     while '(' in stages[-1] or ')' in stages[-1]:
+#         # Find all innermost bracketed content
+#         innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
+#         evaluated_content = [evaluate(content) for content in innermost_content]
         
-        # Print evaluated contents
-        print("Evaluated content:", ', '.join(evaluated_content))
+#         # Print evaluated contents
+#         print("Evaluated content:", ', '.join(evaluated_content))
         
-        # Replace innermost brackets with evaluated content
-        new_stage = stages[-1]
-        for original, evaluated in zip(innermost_content, evaluated_content):
-            new_stage = new_stage.replace(f"({original})", evaluated, 1)
+#         # Replace innermost brackets with evaluated content
+#         new_stage = stages[-1]
+#         for original, evaluated in zip(innermost_content, evaluated_content):
+#             new_stage = new_stage.replace(f"({original})", evaluated, 1)
             
-        stages.append(new_stage)
+#         stages.append(new_stage)
     
-    return stages
+#     return stages
 
-def replace_brackets(input_str):
-    # Replace [ with ( and ] with )
-    output_str = input_str.replace('[', '(').replace(']', ')')
-    return output_str
+# def replace_brackets(input_str):
+#     # Replace [ with ( and ] with )
+#     output_str = input_str.replace('[', '(').replace(']', ')')
+#     return output_str
 
-# Test the function
+# # Test the function
+# # test_str = "AND[OR[EVENTUALLY [REACH[T1]], EVENTUALLY [REACH[T2]], EVENTUALLY [REACH[T3]]], AND[ALWAYS [AVOID[O1]], ALWAYS [AVOID[O2]], ALWAYS [AVOID[O3]]]]"
+# # result = replace_brackets(test_str)
+# # print(result)
+
+# def replace_symbols_with_counter(input_str, num):
+#     # Replace AND[ with AND[num,
+#     output_str = input_str.replace('AND[', f'AND[{num},')
+#     # Replace OR[ with OR[num,
+#     output_str = output_str.replace('OR[', f'OR[{num},')
+#     # Replace EVENTUALLY[ with EVENTUALLY[num,
+#     output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{num},')
+#     # Replace ALWAYS[ with ALWAYS[num,
+#     output_str = output_str.replace('ALWAYS[', f'ALWAYS[{num},')
+    
+#     return output_str
+
+
+# def remove_spaces(input_str):
+#     # Remove all spaces from the string
+#     return input_str.replace(' ', '')
+
+
+# # Test the function
 # test_str = "AND[OR[EVENTUALLY [REACH[T1]], EVENTUALLY [REACH[T2]], EVENTUALLY [REACH[T3]]], AND[ALWAYS [AVOID[O1]], ALWAYS [AVOID[O2]], ALWAYS [AVOID[O3]]]]"
-# result = replace_brackets(test_str)
+# num_choice = 5  # Example: replace with number 5
+# result = replace_symbols_with_counter(remove_spaces(test_str), num_choice)
 # print(result)
-
-def replace_symbols_with_counter(input_str, num):
-    # Replace AND[ with AND[num,
-    output_str = input_str.replace('AND[', f'AND[{num},')
-    # Replace OR[ with OR[num,
-    output_str = output_str.replace('OR[', f'OR[{num},')
-    # Replace EVENTUALLY[ with EVENTUALLY[num,
-    output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{num},')
-    # Replace ALWAYS[ with ALWAYS[num,
-    output_str = output_str.replace('ALWAYS[', f'ALWAYS[{num},')
-    
-    return output_str
-
-
-def remove_spaces(input_str):
-    # Remove all spaces from the string
-    return input_str.replace(' ', '')
-
-
-# Test the function
-test_str = "AND[OR[EVENTUALLY [REACH[T1]], EVENTUALLY [REACH[T2]], EVENTUALLY [REACH[T3]]], AND[ALWAYS [AVOID[O1]], ALWAYS [AVOID[O2]], ALWAYS [AVOID[O3]]]]"
-num_choice = 5  # Example: replace with number 5
-result = replace_symbols_with_counter(remove_spaces(test_str), num_choice)
-print(result)
 
 
 

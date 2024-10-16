@@ -1,13 +1,17 @@
-#!/usr/bin/env python3
+#!/opt/homebrew/bin/python3.11
 '''script to convert stl semantic to executable form'''
-import os
 import re
 import subprocess
 
 class TextToSTL():
-    def __init__(self, semantic):
+    def __init__(self, semantic, degree, dimension, step, thickness):
         self.semantic = semantic
+        self.degree = degree
+        self.dimension = dimension
+        self.step = step
+        self.thickness = thickness
         self.class_phrase = None
+        self.object_identifier = 1
 
     def evaluate(self, phrase):
         phrase = phrase.replace('◊', 'EVENTUALLY')
@@ -53,11 +57,14 @@ class TextToSTL():
     def remove_spaces(self, input_str):
         return input_str.replace(' ', '')
 
-    def replace_symbols_with_counter(self, input_str, num):
-        output_str = input_str.replace('AND[', f'AND[{num},')
-        output_str = output_str.replace('OR[', f'OR[{num},')
-        output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{num},')
-        output_str = output_str.replace('ALWAYS[', f'ALWAYS[{num},')
+    def replace_symbols_with_counter(self, input_str):
+        output_str = input_str.replace('AND[', f'AND[{self.object_identifier},')
+        output_str = output_str.replace('OR[', f'OR[{self.object_identifier},')
+        output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{self.object_identifier},')
+        output_str = output_str.replace('ALWAYS[', f'ALWAYS[{self.object_identifier},')
+
+        output_str = output_str.replace('REACH[', f'REACH[stl_obj_{self.object_identifier}, ')
+        output_str = output_str.replace('AVOID[', f'AVOID[stl_obj_{self.object_identifier}, ')
 
         return output_str
 
@@ -85,11 +92,11 @@ class TextToSTL():
     def replace_T_O_with_values(self, input_str, T_dict, O_dict):
         for T, values in T_dict.items():
             value_str = str(values)
-            input_str = re.sub(rf'\({T}\)', value_str, input_str)
+            input_str = re.sub(rf'{T}\)', f'{value_str[1:]}', input_str)
 
         for O, values in O_dict.items():
             value_str = str(values)
-            input_str = re.sub(rf'\({O}\)', value_str, input_str)
+            input_str = re.sub(rf'{O}\)', f'{value_str[1:]}', input_str)
 
         return input_str
 
@@ -109,21 +116,22 @@ class TextToSTL():
             print(f"Failed to run the script: {e}")
 
     def execute(self):
-        print(self.class_phrase)
         file_name = 'test_script.py'
-        content = '''#!/usr/bin/env python3
-# This is an automatically generated Python script
-from solver import *
-from stl_main import *
-from text_to_stl import *
-from action_classes import *
-from error_handling import *
-from seq_reach_avoid_stay import *
-print("Hello from the new Python file!")
-x = 5
-y = 10
-print(f"The sum of {x} and {y} is: {x + y}")
-obj = ''' + self.class_phrase + '''obj.call()'''
+        content = '#!/usr/bin/env python3\n' \
+        + '# This is an automatically generated Python script\n' \
+        + 'from solver import *\n' \
+        + 'from stl_main import *\n' \
+        + 'from text_to_stl import *\n' \
+        + 'from action_classes import *\n' \
+        + 'from error_handling import *\n' \
+        + 'from seq_reach_avoid_stay import *\n\n' \
+        + 'print("Hello from the new Python file!")\n' \
+        + 'x = 5\n' \
+        + 'y = 10\n' \
+        + 'print(f"The sum of {x} and {y} is: {x + y}")\n\n' \
+        + 'stl_obj_' + str(self.object_identifier) + ' = STL(' + str(self.object_identifier) + ', SeqReachAvoidStay(' + str(self.degree) + ', ' + str(self.dimension) + ', ' + str(self.step) + ', ' + str(self.thickness) + '))\n' \
+        + 'obj = ' + self.class_phrase + '\n' \
+        + 'obj.call()'
 
         self.create_and_run_python_file(file_name, content)
 
@@ -132,11 +140,9 @@ obj = ''' + self.class_phrase + '''obj.call()'''
         # for i, stage in enumerate(stages, 1):
         #     print(f"Stage {i}: {stage}")
 
-        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1]), 1))
-
+        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1])))
         T_dict, O_dict = self.count_and_map_T_O(self.class_phrase)
         self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase, T_dict, O_dict))
-        
 
         print("T_dict:", T_dict)
         print("O_dict:", O_dict)
@@ -145,7 +151,7 @@ obj = ''' + self.class_phrase + '''obj.call()'''
         self.execute()
 
 semantic = "(((◊ T1 ∨ ◊ T2) ∨ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
-x = TextToSTL(semantic)
+x = TextToSTL(semantic, 10, 1, 0.5, 1)
 x.call()
 
 ############################ tasks:
