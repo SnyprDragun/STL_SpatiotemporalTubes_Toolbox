@@ -7,6 +7,7 @@ import subprocess
 class TextToSTL():
     def __init__(self, semantic):
         self.semantic = semantic
+        self.class_phrase = None
 
     def evaluate(self, phrase):
         phrase = phrase.replace('◊', 'EVENTUALLY')
@@ -49,9 +50,8 @@ class TextToSTL():
 
         return stages
 
-    def replace_brackets(self, input_str):
-        output_str = input_str.replace('[', '(').replace(']', ')')
-        return output_str
+    def remove_spaces(self, input_str):
+        return input_str.replace(' ', '')
 
     def replace_symbols_with_counter(self, input_str, num):
         output_str = input_str.replace('AND[', f'AND[{num},')
@@ -61,15 +61,9 @@ class TextToSTL():
 
         return output_str
 
-    def remove_spaces(self, input_str):
-        return input_str.replace(' ', '')
-
-    def call(self):
-        stages = self.remove_brackets_and_evaluate(self.semantic)
-        for i, stage in enumerate(stages, 1):
-            print(f"Stage {i}: {stage}")
-
-        print(self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1]), 1)))
+    def replace_brackets(self, input_str):
+        output_str = input_str.replace('[', '(').replace(']', ')')
+        return output_str
 
     def create_and_run_python_file(self, file_name, content):
         with open(file_name, 'w') as f:
@@ -87,7 +81,7 @@ class TextToSTL():
             print(f"Failed to run the script: {e}")
 
     def execute(self):
-        parsed_output = self.parse_expression(self.final(self.text))
+        parsed_output = self.class_phrase
         file_name = 'test_script.py'
         content = '''#!/usr/bin/env python3
 # This is an automatically generated Python script
@@ -105,6 +99,13 @@ obj = ''' + parsed_output
 
         self.create_and_run_python_file(file_name, content)
 
+    def call(self):
+        stages = self.remove_brackets_and_evaluate(self.semantic)
+        for i, stage in enumerate(stages, 1):
+            print(f"Stage {i}: {stage}")
+
+        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1]), 1))
+        self.execute()
 
 semantic = "(((◊ T1 ∨ ◊ T2) ∨ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
 x = TextToSTL(semantic)

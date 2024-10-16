@@ -1,4 +1,4 @@
-#!/opt/homebrew/bin/python3.11
+#!/usr/bin/env python3
 # This is an automatically generated Python script
 from solver import *
 from stl_main import *
@@ -10,4 +10,4 @@ print("Hello from the new Python file!")
 x = 5
 y = 10
 print(f"The sum of {x} and {y} is: {x + y}")
-obj = AND(1, OR(1, EVENTUALLY(1, 0, 1, REACH([0])), EVENTUALLY(1, 0, 1, REACH([0]))), AND(1, ALWAYS(1, 2, 3, AVOID([0])), ALWAYS(1, 2, 3, AVOID([0]))))
+obj = AND(1,OR(1,OR(1,EVENTUALLY(1,((REACH(T1)))),EVENTUALLY(1,((REACH(T2))))),EVENTUALLY(1,((REACH(T3))))),AND(1,ALWAYS(1,AVOID(O1)),ALWAYS(1,AVOID(O2)),ALWAYS(1,AVOID(O3))))
