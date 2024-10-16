@@ -40,7 +40,7 @@ class TextToSTL():
             innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
             evaluated_content = [self.evaluate(content) for content in innermost_content]
 
-            print("Evaluated content:", ', '.join(evaluated_content))
+            # print("Evaluated content:", ', '.join(evaluated_content))
 
             new_stage = stages[-1]
             for original, evaluated in zip(innermost_content, evaluated_content):
@@ -65,6 +65,34 @@ class TextToSTL():
         output_str = input_str.replace('[', '(').replace(']', ')')
         return output_str
 
+    def count_and_map_T_O(self, input_str):
+        T_matches = sorted(set(re.findall(r'\bT\d+\b', input_str)))
+        O_matches = sorted(set(re.findall(r'\bO\d+\b', input_str)))
+        T_dict = {}
+        O_dict = {}
+        print("Please provide values for each Tx and Ox term (enter comma-separated integers):")
+
+        for T in T_matches:
+            values = input(f"Enter values for {T}: ")
+            T_dict[T] = list(map(int, values.split(',')))
+
+        for O in O_matches:
+            values = input(f"Enter values for {O}: ")
+            O_dict[O] = list(map(int, values.split(',')))
+
+        return T_dict, O_dict
+
+    def replace_T_O_with_values(self, input_str, T_dict, O_dict):
+        for T, values in T_dict.items():
+            value_str = str(values)
+            input_str = re.sub(rf'\({T}\)', value_str, input_str)
+
+        for O, values in O_dict.items():
+            value_str = str(values)
+            input_str = re.sub(rf'\({O}\)', value_str, input_str)
+
+        return input_str
+
     def create_and_run_python_file(self, file_name, content):
         with open(file_name, 'w') as f:
             f.write(content)
@@ -81,7 +109,7 @@ class TextToSTL():
             print(f"Failed to run the script: {e}")
 
     def execute(self):
-        parsed_output = self.class_phrase
+        print(self.class_phrase)
         file_name = 'test_script.py'
         content = '''#!/usr/bin/env python3
 # This is an automatically generated Python script
@@ -95,16 +123,25 @@ print("Hello from the new Python file!")
 x = 5
 y = 10
 print(f"The sum of {x} and {y} is: {x + y}")
-obj = ''' + parsed_output
+obj = ''' + self.class_phrase
 
         self.create_and_run_python_file(file_name, content)
 
     def call(self):
         stages = self.remove_brackets_and_evaluate(self.semantic)
-        for i, stage in enumerate(stages, 1):
-            print(f"Stage {i}: {stage}")
+        # for i, stage in enumerate(stages, 1):
+        #     print(f"Stage {i}: {stage}")
 
         self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1]), 1))
+
+        T_dict, O_dict = self.count_and_map_T_O(self.class_phrase)
+        self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase, T_dict, O_dict))
+        
+
+        print("T_dict:", T_dict)
+        print("O_dict:", O_dict)
+        print(self.class_phrase)
+
         self.execute()
 
 semantic = "(((◊ T1 ∨ ◊ T2) ∨ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"

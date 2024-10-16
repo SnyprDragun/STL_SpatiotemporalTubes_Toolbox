@@ -10,4 +10,4 @@ print("Hello from the new Python file!")
 x = 5
 y = 10
 print(f"The sum of {x} and {y} is: {x + y}")
-obj = AND(1,OR(1,OR(1,EVENTUALLY(1,((REACH(T1)))),EVENTUALLY(1,((REACH(T2))))),EVENTUALLY(1,((REACH(T3))))),AND(1,ALWAYS(1,AVOID(O1)),ALWAYS(1,AVOID(O2)),ALWAYS(1,AVOID(O3))))
+obj = AND(1,OR(1,OR(1,EVENTUALLY(1,((REACH(1)))),EVENTUALLY(1,((REACH(2))))),EVENTUALLY(1,((REACH(3))))),AND(1,ALWAYS(1,AVOID(4)),ALWAYS(1,AVOID(5)),ALWAYS(1,AVOID(6))))
