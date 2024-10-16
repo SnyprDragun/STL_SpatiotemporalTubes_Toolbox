@@ -1,8 +1,10 @@
-#!/opt/homebrew/bin/python3.11
-'''script for robust sequential reach-avoid-stay STL specifications'''
+#!/usr/bin/env python3
+'''SIGNAL TEMPORAL LOGIC - SPATIOTEMPPORAL TUBES - TOOLBOX'''
 
+import re
 import z3
 import time
+import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -1864,189 +1866,153 @@ class IMPLIES(STL):
                 self.main.solver.add(i)
 
 
-stl2 = STL(1, SeqReachAvoidStay(12, 2, 0.1, 1))
-# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3))).call()
-# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3)).call()).call()
-# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3)).call()).call()
+class TextToSTL():
+    def __init__(self, semantic, degree, dimension, step, thickness):
+        self.semantic = semantic
+        self.degree = degree
+        self.dimension = dimension
+        self.step = step
+        self.thickness = thickness
+        self.class_phrase = None
+        self.object_identifier = 1
 
-#------------ DRONE CASE------------#
-# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, -1, 2, -1, 2, 1, 4)), 
-#             EVENTUALLY(1, 14, 15, REACH(stl2.main, 12, 15, 12, 15, 12, 15)),
-#             OR(1, EVENTUALLY(1, 7, 8, REACH(stl2.main, 9, 12, 6, 9, 6, 9)), 
-#                     EVENTUALLY(1, 7, 8, REACH(stl2.main, 3, 6, 6, 9, 6, 9))
-#                 ),
-#             ALWAYS(1, 0, 15, AVOID(stl2.main, 6, 9, 6, 11, 0, 15)),
-#         ).call()
-#-----------------------------------#
+    def evaluate(self, phrase):
+        phrase = phrase.replace('◊', 'EVENTUALLY')
+        phrase = phrase.replace('□', 'ALWAYS')
+
+        # Handle negations, wrapping ¬ Oₓ as [AVOID[Oₓ]]
+        phrase = re.sub(r'¬\s*(O\d+)', r'[AVOID[\1]]', phrase)
+        
+        # Replace T_x terms with REACH[T_x] only if not already wrapped in REACH[]
+        phrase = re.sub(r'\b(T\d+)\b(?!\])', r'REACH[\1]', phrase)
+
+        # Wrap REACH[Tₓ] with [REACH[Tₓ]]
+        phrase = re.sub(r'REACH\[(T\d+)\]', r'[REACH[\1]]', phrase)
+
+        if '∧' in phrase:
+            parts = phrase.split('∧')
+            evaluated = f"AND[{', '.join(part.strip() for part in parts)}]"
+        elif '∨' in phrase:
+            parts = phrase.split('∨')
+            evaluated = f"OR[{', '.join(part.strip() for part in parts)}]"
+        else:
+            evaluated = phrase
+
+        return evaluated
+
+    def remove_brackets_and_evaluate(self, input_str):
+        stages = [input_str]
+
+        while '(' in stages[-1] or ')' in stages[-1]:
+            innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
+            evaluated_content = [self.evaluate(content) for content in innermost_content]
+
+            # print("Evaluated content:", ', '.join(evaluated_content))
+
+            new_stage = stages[-1]
+            for original, evaluated in zip(innermost_content, evaluated_content):
+                new_stage = new_stage.replace(f"({original})", evaluated, 1)
+                
+            stages.append(new_stage)
+
+        return stages
+
+    def remove_spaces(self, input_str):
+        return input_str.replace(' ', '')
+
+    def replace_symbols_with_counter(self, input_str):
+        output_str = input_str.replace('AND[', f'AND[{self.object_identifier},')
+        output_str = output_str.replace('OR[', f'OR[{self.object_identifier},')
+        output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{self.object_identifier},')
+        output_str = output_str.replace('ALWAYS[', f'ALWAYS[{self.object_identifier},')
+
+        output_str = output_str.replace('REACH[', f'REACH[stl_obj_{self.object_identifier}, ')
+        output_str = output_str.replace('AVOID[', f'AVOID[stl_obj_{self.object_identifier}, ')
+
+        return output_str
+
+    def replace_brackets(self, input_str):
+        output_str = input_str.replace('[', '(').replace(']', ')')
+        return output_str
+
+    def count_and_map_T_O(self, input_str):
+        T_matches = sorted(set(re.findall(r'\bT\d+\b', input_str)))
+        O_matches = sorted(set(re.findall(r'\bO\d+\b', input_str)))
+        T_dict = {}
+        O_dict = {}
+        print("Please provide values for each Tx and Ox term (enter comma-separated integers):")
+
+        for T in T_matches:
+            values = input(f"Enter values for {T}: ")
+            T_dict[T] = list(map(int, values.split(',')))
+
+        for O in O_matches:
+            values = input(f"Enter values for {O}: ")
+            O_dict[O] = list(map(int, values.split(',')))
+
+        return T_dict, O_dict
+
+    def replace_T_O_with_values(self, input_str, T_dict, O_dict):
+        for T, values in T_dict.items():
+            value_str = str(values)
+            input_str = re.sub(rf'{T}\)', f'{value_str[1:]}', input_str)
+
+        for O, values in O_dict.items():
+            value_str = str(values)
+            input_str = re.sub(rf'{O}\)', f'{value_str[1:]}', input_str)
+
+        return input_str
+
+    def create_and_run_python_file(self, file_name, content):
+        with open(file_name, 'w') as f:
+            f.write(content)
+        print(f"{file_name} created successfully!")
+
+        try:
+            result = subprocess.run(['python3', file_name], capture_output=True, text=True)
+            print("Output of the script:")
+            print(result.stdout)
+            if result.stderr:
+                print("Errors:")
+                print(result.stderr)
+        except Exception as e:
+            print(f"Failed to run the script: {e}")
+
+    def execute(self):
+        file_name = 'test_script.py'
+        content = '#!/usr/bin/env python3\n' \
+        + '# This is an automatically generated Python script\n' \
+        + 'from solver import *\n' \
+        + 'from stl_main import *\n' \
+        + 'from text_to_stl import *\n' \
+        + 'from action_classes import *\n' \
+        + 'from error_handling import *\n' \
+        + 'from seq_reach_avoid_stay import *\n\n' \
+        + 'print("Hello from the new Python file!")\n' \
+        + 'x = 5\n' \
+        + 'y = 10\n' \
+        + 'print(f"The sum of {x} and {y} is: {x + y}")\n\n' \
+        + 'stl_obj_' + str(self.object_identifier) + ' = STL(' + str(self.object_identifier) + ', SeqReachAvoidStay(' + str(self.degree) + ', ' + str(self.dimension) + ', ' + str(self.step) + ', ' + str(self.thickness) + '))\n' \
+        + 'obj = ' + self.class_phrase + '\n' \
+        + 'obj.call()'
+
+        self.create_and_run_python_file(file_name, content)
+
+    def call(self):
+        stages = self.remove_brackets_and_evaluate(self.semantic)
+        # for i, stage in enumerate(stages, 1):
+        #     print(f"Stage {i}: {stage}")
+
+        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1])))
+        T_dict, O_dict = self.count_and_map_T_O(self.class_phrase)
+        self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase, T_dict, O_dict))
+
+        print("T_dict:", T_dict)
+        print("O_dict:", O_dict)
+        print(self.class_phrase)
+
+        self.execute()
 
 
-#------ ALWAYS EVENTUALLY CASE -----#
-# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
-#                EVENTUALLY(1, 3, 4, REACH(stl2.main, 7, 8, 11, 12)),
-#                EVENTUALLY(1, 6, 7, REACH(stl2.main, 10, 11, 7, 8)),
-#                EVENTUALLY(1, 9, 10, REACH(stl2.main, 7, 8, 11, 12)),
-#                EVENTUALLY(1, 12, 13, REACH(stl2.main, 11, 12, 7, 8)),
-#                EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15))
-#             ).call()
-#-----------------------------------#
-
-stl2.plotter()
-
-
-
-                #####        #####       #####       #######
-               ##   ##      ##   ##      ##  ##      ##  
-              ##           ##     ##     ##   ##     #### 
-              ##           ##     ##     ##   ##     ####
-               ##   ##      ##   ##      ##  ##      ## 
-                #####        #####       #####       #######
-
-######      ##     ##     ###    ##     ###    ##     ##     ###    ##     #####
-##   ##     ##     ##     ####   ##     ####   ##     ##     ####   ##    ##
-##   ##     ##     ##     ## ##  ##     ## ##  ##     ##     ## ##  ##   ##
-## ##       ##     ##     ##  ## ##     ##  ## ##     ##     ##  ## ##   ##   ### 
-##  ##       ##   ##      ##   ####     ##   ####     ##     ##   ####    ##   ##
-##   ##       #####       ##    ###     ##    ###     ##     ##    ###     #####
-
-
-
-
-
-
-# -------------------------------------- ALWAYS-EVENTUALLY EXAMPLE -------------------------------------- #
-# Reach Constraints:  [[0, 1, 0, 1, 0, 1], [7, 8, 11, 12, 3, 4], [10, 11, 7, 8, 6, 7], [7, 8, 11, 12, 9, 10], [11, 12, 7, 8, 12, 13], [14, 15, 14, 15, 14, 15]]
-# C0 = 0.08333333333333333
-# C1 = -5.817436030541716
-# C2 = 18.42434361623948
-# C3 = -13.95526959737941
-# C4 = 5.298201103203326
-# C5 = -1.1646603810073652
-# C6 = 0.15232477853262447
-# C7 = -0.010408960326033685
-# C8 = 0.0
-# C9 = 6.641565062178928e-05
-# C10 = -5.7836284132781364e-06
-# C11 = 2.2218992013231217e-07
-# C12 = -3.3709706402282637e-09
-# C13 = 0.08333333333333333
-# C14 = -0.5644011695585874
-# C15 = 1.4730509589736605
-# C16 = 1.7656366115500863
-# C17 = -0.9428363835173661
-# C18 = 0.04409656710255154
-# C19 = 0.057870859988860546
-# C20 = -0.01664561149694609
-# C21 = 0.002216675443836667
-# C22 = -0.00016877638634275402
-# C23 = 7.509226919078036e-06
-# C24 = -1.8073326755822833e-07
-# C25 = 1.797148064281541e-09
-# C26 = 0.9166666666666666
-# C27 = -8.03045020496731
-# C28 = 23.8758114499262
-# C29 = -19.114204479901467
-# C30 = 7.866317700941796
-# C31 = -1.9403011149956013
-# C32 = 0.30536754431523905
-# C33 = -0.03088014010876313
-# C34 = 0.0018780373654999922
-# C35 = -5.0357461614743235e-05
-# C36 = -1.0682350059652324e-06
-# C37 = 1.1039516193943358e-07
-# C38 = -2.188198426960021e-09
-# C39 = 0.6666666666666666
-# C40 = -0.4762809678792631
-# C41 = 1.088734647470142
-# C42 = 2.3708487659866515
-# C43 = -1.4121941399387143
-# C44 = 0.25305617203885217
-# C45 = 0.0
-# C46 = -0.006254620144161909
-# C47 = 0.000988294758218591
-# C48 = -7.394827589892189e-05
-# C49 = 2.911844965333087e-06
-# C50 = -5.374330168041333e-08
-# C51 = 2.730628516158349e-10
-
-# -------------------------------------- DRONE EXAMPLE -------------------------------------- #
-
-#------------------ DRONE OR CASE FIRST BLOCK ------------------#
-# Reach Constraints:  [[-1, 2, -1, 2, 1, 4, 0, 1], [12, 15, 12, 15, 12, 15, 14, 15], [9, 12, 6, 9, 6, 9, 7, 8]]
-# Avoid Constraints:  [[6, 9, 6, 11, 0, 15, 0, 15]]
-# C0 = -0.5092201124440394
-# C1 = -1.665740011109661
-# C2 = 1.542484516723121
-# C3 = -0.3243109601139466
-# C4 = 0.026244366716944464
-# C5 = -0.0007154516946045534
-# C6 = -0.5092201124440394
-# C7 = -0.9354351139789893
-# C8 = 0.8798053580061804
-# C9 = -0.15421328533867962
-# C10 = 0.011825144550615181
-# C11 = -0.00032995786104859844
-# C12 = 1.4907798875559606
-# C13 = -0.14819509743468093
-# C14 = 0.32437796115886813
-# C15 = -0.058556349964849215
-# C16 = 0.0052465859553120706
-# C17 = -0.0001699023672777245
-# C18 = 1.9953899437779803
-# C19 = -1.6883828104673564
-# C20 = 1.5955854133448955
-# C21 = -0.34080413875938786
-# C22 = 0.02799927661790214
-# C23 = -0.0007749401658234577
-# C24 = 1.9953899437779803
-# C25 = -0.9354351139789893
-# C26 = 0.8798053580061804
-# C27 = -0.15421328533867962
-# C28 = 0.011825144550615181
-# C29 = -0.00032995786104859844
-# C30 = 3.99538994377798
-# C31 = -0.14819509743468093
-# C32 = 0.32437796115886813
-# C33 = -0.058556349964849215
-# C34 = 0.0052465859553120706
-# C35 = -0.0001699023672777245
-
-
-#------------------ DRONE OR CASE SECOND BLOCK ------------------#
-# Reach Constraints:  [[-1, 2, -1, 2, 1, 4, 0, 1], [12, 15, 12, 15, 12, 15, 14, 15], [9, 12, 6, 9, 6, 9, 7, 8]]
-# Avoid Constraints:  [[6, 9, 6, 9, 0, 15, 0, 15]]
-# C0 = -0.9947193621508238
-# C1 = 0.4277863285546202
-# C2 = 1.2140297298487956
-# C3 = -0.27679682188266586
-# C4 = 0.02200792560735738
-# C5 = -0.0005888928692527835
-# C6 = -0.5105612756983524
-# C7 = -1.4667281217292212
-# C8 = 1.0843122115171406
-# C9 = -0.18152804910001696
-# C10 = 0.013280466284529367
-# C11 = -0.0003552471176615102
-# C12 = 1.4894387243016476
-# C13 = -1.27618875247245
-# C14 = 0.655150320834794
-# C15 = -0.08099965733727106
-# C16 = 0.004422992408222249
-# C17 = -8.864906559813607e-05
-# C18 = 1.5105612756983524
-# C19 = 0.4277863285546202
-# C20 = 1.2140297298487956
-# C21 = -0.27679682188266586
-# C22 = 0.02200792560735738
-# C23 = -0.0005888928692527835
-# C24 = 1.994719362150824
-# C25 = -1.4667281217292212
-# C26 = 1.0843122115171406
-# C27 = -0.18152804910001696
-# C28 = 0.013280466284529367
-# C29 = -0.0003552471176615102
-# C30 = 3.994719362150824
-# C31 = -1.27618875247245
-# C32 = 0.655150320834794
-# C33 = -0.08099965733727106
-# C34 = 0.004422992408222249
-# C35 = -8.864906559813607e-05
+semantic = "(((◊ T1 ∨ ◊ T2) ∨ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
+TextToSTL(semantic, 10, 1, 0.5, 1).call()
