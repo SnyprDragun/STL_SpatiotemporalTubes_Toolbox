@@ -24,7 +24,7 @@ class STL():
 class AND(STL):
     def __init__(self, identifier, *instances):
         self.instances = instances
-        self.return_value = False
+        self.return_value = True
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main

@@ -123,7 +123,7 @@ print("Hello from the new Python file!")
 x = 5
 y = 10
 print(f"The sum of {x} and {y} is: {x + y}")
-obj = ''' + self.class_phrase
+obj = ''' + self.class_phrase + '''obj.call()'''
 
         self.create_and_run_python_file(file_name, content)
 
