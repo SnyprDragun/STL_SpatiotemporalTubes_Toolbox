@@ -12,6 +12,7 @@ class TextToSTL():
         self.thickness = thickness
         self.class_phrase = None
         self.object_identifier = 1
+        self.event_dict = None
 
     def evaluate(self, phrase):
         phrase = phrase.replace('◊', 'EVENTUALLY')
@@ -60,6 +61,7 @@ class TextToSTL():
     def replace_symbols_with_counter(self, input_str):
         output_str = input_str.replace('AND[', f'AND[{self.object_identifier},')
         output_str = output_str.replace('OR[', f'OR[{self.object_identifier},')
+
         output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{self.object_identifier},')
         output_str = output_str.replace('ALWAYS[', f'ALWAYS[{self.object_identifier},')
 
@@ -100,6 +102,43 @@ class TextToSTL():
 
         return input_str
 
+    def count_eventually_always(self, text):
+        # Count and find all instances of EVENTUALLY and ALWAYS
+        eventually_matches = re.findall(r'EVENTUALLY', text)
+        always_matches = re.findall(r'ALWAYS', text)
+
+        # Create a dictionary to store values for each EVENTUALLY and ALWAYS instance
+        event_dict = {}
+
+        # Get user input for each EVENTUALLY occurrence
+        for i, _ in enumerate(eventually_matches, start=1):
+            value = input(f"Enter a value for EVENTUALLY[{i}]: ")
+            event_dict[f'EVENTUALLY[{i}]'] = value
+
+        # Get user input for each ALWAYS occurrence
+        for i, _ in enumerate(always_matches, start=1):
+            value = input(f"Enter a value for ALWAYS[{i}]: ")
+            event_dict[f'ALWAYS[{i}]'] = value
+
+        return event_dict
+
+    def replace_eventually_always_with_values(self, input_str):
+        eventually_count = 0
+
+        def replace_eventually_match(match):
+            nonlocal eventually_count
+            eventually_count += 1
+            # Construct the key to look up in the dictionary
+            key = f'EVENTUALLY[{eventually_count}]'
+            # Get the value from the dictionary, defaulting to an empty string if not found
+            value = self.event_dict.get(key, "")
+            return f'EVENTUALLY[{value},'
+
+        # Use regex to replace EVENTUALLY[ occurrences
+        result = re.sub(r'EVENTUALLY\[\[', replace_eventually_match, input_str)
+
+        return result
+
     def create_and_run_python_file(self, file_name, content):
         with open(file_name, 'w') as f:
             f.write(content)
@@ -119,33 +158,43 @@ class TextToSTL():
         file_name = 'test_script.py'
         content = '#!/usr/bin/env python3\n' \
         + '# This is an automatically generated Python script\n' \
-        + 'from solver import *\n' \
+        + 'from seq_reach_avoid_stay import *\n' \
         + 'from stl_main import *\n' \
-        + 'from text_to_stl import *\n' \
-        + 'from action_classes import *\n' \
-        + 'from error_handling import *\n' \
-        + 'from seq_reach_avoid_stay import *\n\n' \
+        + 'from action_classes import *\n\n' \
         + 'print("Hello from the new Python file!")\n' \
         + 'x = 5\n' \
         + 'y = 10\n' \
         + 'print(f"The sum of {x} and {y} is: {x + y}")\n\n' \
         + 'stl_obj_' + str(self.object_identifier) + ' = STL(' + str(self.object_identifier) + ', SeqReachAvoidStay(' + str(self.degree) + ', ' + str(self.dimension) + ', ' + str(self.step) + ', ' + str(self.thickness) + '))\n' \
         + 'obj = ' + self.class_phrase + '\n' \
+        + 'obj.return_value = False\n' \
         + 'obj.call()'
 
         self.create_and_run_python_file(file_name, content)
 
     def call(self):
         stages = self.remove_brackets_and_evaluate(self.semantic)
-        # for i, stage in enumerate(stages, 1):
-        #     print(f"Stage {i}: {stage}")
+        self.class_phrase = self.remove_spaces(stages[-1])
+        print("1: ", self.class_phrase)
 
-        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1])))
+        self.event_dict = self.count_eventually_always(self.class_phrase)
+        #call eventually/always value replacer here
+        self.class_phrase = self.replace_eventually_always_with_values(self.class_phrase)
+        print("2: ", self.class_phrase)
+        print("EVENTUALLY/ALWAYS dict:", self.event_dict)
+
+        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(self.class_phrase)))
+        print("3: ", self.class_phrase)
+
         T_dict, O_dict = self.count_and_map_T_O(self.class_phrase)
+        print("4: ", self.class_phrase)
+
         self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase, T_dict, O_dict))
+        print("5: ", self.class_phrase)
 
         print("T_dict:", T_dict)
         print("O_dict:", O_dict)
+        
         print(self.class_phrase)
 
         self.execute()
