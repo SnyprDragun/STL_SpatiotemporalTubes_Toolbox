@@ -214,8 +214,6 @@ class EVENTUALLY(STL):
     
     def add_resultant(self):
         '''adds constraints'''
-        all_constraints =[]
-
         if isinstance(self.task, REACH) or isinstance(self.task, AVOID) or isinstance(self.task, STAY):
             constraints = self.task.call()
             for constraint in constraints:
@@ -281,12 +279,58 @@ class ALWAYS(STL):
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
 
-    def call(self):
-        all_constraints = self.task.call()
-        if self.return_value == True:
-            return all_constraints
+    def add_resultant(self):
+        '''adds constraints'''
+        if isinstance(self.task, REACH) or isinstance(self.task, AVOID) or isinstance(self.task, STAY):
+            constraints = self.task.call()
+            for constraint in constraints:
+                self.main.solver.add(constraint)
+        elif isinstance(self.task, ALWAYS):
+            always = self.task
+            if self.main.dimension == 1:
+                constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2)).call()
+            elif self.main.dimension == 2:
+                constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2)).call()
+            else:
+                constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2, always.task.z1, always.task.z2)).call()
+            
+            for constraint in constraints:
+                self.main.solver.add(constraint)
+        elif isinstance(self.task, EVENTUALLY) or isinstance(self.task, IMPLIES) or isinstance(self.task, UNTIL) or isinstance(self.task, NOT):
+            print(self.task.__class__.__name__, "not handeled for EVENTUALLY")
         else:
-            self.main.solver.add(all_constraints)
+            print("Unknown Instance")
+
+    def return_resultant(self):
+        '''returns constraints'''
+        all_constraints =[]
+
+        if isinstance(self.task, REACH) or isinstance(self.task, AVOID) or isinstance(self.task, STAY):
+            constraints = self.task.call()
+            for constraint in constraints:
+                all_constraints.append(constraint)
+        elif isinstance(self.task, ALWAYS):
+            always = self.task
+            if self.main.dimension == 1:
+                constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2)).call()
+            elif self.main.dimension == 2:
+                constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2)).call()
+            else:
+                constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2, always.task.z1, always.task.z2)).call()
+            
+            for constraint in constraints:
+                all_constraints.append(constraint)
+        elif isinstance(self.task, EVENTUALLY) or isinstance(self.task, IMPLIES) or isinstance(self.task, UNTIL) or isinstance(self.task, NOT):
+            print(self.task.__class__.__name__, "not handeled for EVENTUALLY")
+        else:
+            print("Unknown Instance")
+        return all_constraints
+
+    def call(self):
+        if self.return_value == True:
+            return self.return_resultant()
+        else:
+            self.add_resultant()
 
 
 class UNTIL(STL):

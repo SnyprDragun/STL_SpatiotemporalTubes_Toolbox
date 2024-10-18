@@ -170,10 +170,7 @@ class TextToSTL():
         self.class_phrase = self.remove_spaces(self.remove_brackets_and_evaluate(self.semantic))
         print("1: ", self.class_phrase)
         self.count_eventually_always(self.class_phrase)
-        # enter eventually always logic
-            # replace EVENTUALLYALWAYS with EVENTUALLY[ALWAYS
-        self.class_phrase = self.replace_eventually_always_with_brackets(self.class_phrase)
-        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(self.replace_eventually_always_with_values(self.class_phrase))))
+        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(self.replace_eventually_always_with_values(self.replace_eventually_always_with_brackets(self.class_phrase)))))
         print("2: ", self.class_phrase)
         self.count_and_map_T_O(self.class_phrase)
         self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase))
@@ -187,7 +184,7 @@ semantic = "(◊ (□ T1))"
 TextToSTL(semantic, 10, 1, 0.5, 1).call()
 
 ############################ tasks:
-# 1. Handle always eventually (loop eventually in always time frame)
-# 2. Handle eventually always (stay, might circle around in same position or like climb up with time)
-# 3. Handle global [goal] for OR cases
-# 4. Handle OR-OR cascade in stl_main
+# 1. Handle always eventually (loop eventually in always time frame)                                    -> PENDING
+# 2. Handle eventually always (stay, might circle around in same position or like climb up with time)   -> DONE
+# 3. Handle global [goal] for OR cases                                                                  -> PENDING
+# 4. Handle OR-OR cascade in stl_main                                                                   -> PENDING
