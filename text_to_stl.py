@@ -12,7 +12,9 @@ class TextToSTL():
         self.thickness = thickness
         self.class_phrase = None
         self.object_identifier = 1
-        self.event_dict = None
+        self.eventually_always_dict = None
+        self.T_dict = {}
+        self.O_dict = {}
 
     def evaluate(self, phrase):
         phrase = phrase.replace('◊', 'EVENTUALLY')
@@ -44,7 +46,7 @@ class TextToSTL():
                 new_stage = new_stage.replace(f"({original})", evaluated, 1)
             stages.append(new_stage)
 
-        return stages
+        return stages[-1]
 
     def remove_spaces(self, input_str):
         return input_str.replace(' ', '')
@@ -68,26 +70,23 @@ class TextToSTL():
     def count_and_map_T_O(self, input_str):
         T_matches = sorted(set(re.findall(r'\bT\d+\b', input_str)))
         O_matches = sorted(set(re.findall(r'\bO\d+\b', input_str)))
-        T_dict = {}
-        O_dict = {}
+
         print("Please provide values for each Tx and Ox term (enter comma-separated integers):")
 
         for T in T_matches:
             values = input(f"Enter values for {T}: ")
-            T_dict[T] = list(map(int, values.split(',')))
+            self.T_dict[T] = list(map(int, values.split(',')))
 
         for O in O_matches:
             values = input(f"Enter values for {O}: ")
-            O_dict[O] = list(map(int, values.split(',')))
+            self.O_dict[O] = list(map(int, values.split(',')))
 
-        return T_dict, O_dict
-
-    def replace_T_O_with_values(self, input_str, T_dict, O_dict):
-        for T, values in T_dict.items():
+    def replace_T_O_with_values(self, input_str):
+        for T, values in self.T_dict.items():
             value_str = str(values)
             input_str = re.sub(rf'{T}\)', f'{value_str[1:]}', input_str)
 
-        for O, values in O_dict.items():
+        for O, values in self.O_dict.items():
             value_str = str(values)
             input_str = re.sub(rf'{O}\)', f'{value_str[1:]}', input_str)
 
@@ -97,17 +96,15 @@ class TextToSTL():
         eventually_matches = re.findall(r'EVENTUALLY', text)
         always_matches = re.findall(r'ALWAYS', text)
 
-        event_dict = {}
+        self.eventually_always_dict = {}
 
         for i, _ in enumerate(eventually_matches, start=1):
             value = input(f"Enter a value for EVENTUALLY[{i}]: ")
-            event_dict[f'EVENTUALLY[{i}]'] = value
+            self.eventually_always_dict[f'EVENTUALLY[{i}]'] = value
 
         for i, _ in enumerate(always_matches, start=1):
             value = input(f"Enter a value for ALWAYS[{i}]: ")
-            event_dict[f'ALWAYS[{i}]'] = value
-
-        return event_dict
+            self.eventually_always_dict[f'ALWAYS[{i}]'] = value
 
     def replace_eventually_always_with_values(self, input_str):
         eventually_count = 0
@@ -117,7 +114,7 @@ class TextToSTL():
             nonlocal eventually_count
             eventually_count += 1
             key = f'EVENTUALLY[{eventually_count}]'
-            value = self.event_dict.get(key, "")
+            value = self.eventually_always_dict.get(key, "")
             return f'EVENTUALLY[{value},'
         input_str = re.sub(r'EVENTUALLY\[', replace_eventually_match, input_str)
 
@@ -125,7 +122,7 @@ class TextToSTL():
             nonlocal always_count
             always_count += 1
             key = f'ALWAYS[{always_count}]'
-            value = self.event_dict.get(key, "")
+            value = self.eventually_always_dict.get(key, "")
             return f'ALWAYS[{value},'
         result = re.sub(r'ALWAYS\[', replace_always_match, input_str)
 
@@ -166,36 +163,19 @@ class TextToSTL():
         self.create_and_run_python_file(file_name, content)
 
     def call(self):
-        stages = self.remove_brackets_and_evaluate(self.semantic)
-        self.class_phrase = self.remove_spaces(stages[-1])
-        print("1: ", self.class_phrase)
-
-        self.event_dict = self.count_eventually_always(self.class_phrase)
-        self.class_phrase = self.replace_eventually_always_with_values(self.class_phrase)
-        print("2: ", self.class_phrase)
-        print("EVENTUALLY/ALWAYS dict:", self.event_dict)
-
-        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(self.class_phrase)))
-        print("3: ", self.class_phrase)
-
-        T_dict, O_dict = self.count_and_map_T_O(self.class_phrase)
-        print("4: ", self.class_phrase)
-
-        self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase, T_dict, O_dict))
-        print("5: ", self.class_phrase)
-
-        print("T_dict:", T_dict)
-        print("O_dict:", O_dict)
-        
+        self.class_phrase = self.remove_spaces(self.remove_brackets_and_evaluate(self.semantic))
+        self.count_eventually_always(self.class_phrase)
+        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(self.replace_eventually_always_with_values(self.class_phrase))))
+        self.count_and_map_T_O(self.class_phrase)
+        self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase))
         print(self.class_phrase)
-
         self.execute()
 
 semantic = "(((◊ T1 ∨ ◊ T2) ∧ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
-x = TextToSTL(semantic, 10, 1, 0.5, 1)
-x.call()
+TextToSTL(semantic, 10, 1, 0.5, 1).call()
 
 ############################ tasks:
 # 1. Handle always eventually (loop eventually in always time frame)
 # 2. Handle eventually always (stay, might circle around in same position or like climb up with time)
 # 3. Handle global [goal] for OR cases
+# 4. Handle OR-OR cascade in stl_main
