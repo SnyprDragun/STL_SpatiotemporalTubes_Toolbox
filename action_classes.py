@@ -51,7 +51,7 @@ class REACH(TASK):
         if self.main.getFinish() < self.t2:
             self.main.setFinish(self.t2)
 
-    def checkCallableAndCallExecute(self):
+    def call(self):
         if self.callable == 1:
             if self.depth == "minimum":
                 return self.execute_reach_1D_depth_minimum()
@@ -333,7 +333,7 @@ class AVOID(TASK):
         if self.main.getFinish() < self.t2:
             self.main.setFinish(self.t2)
 
-    def checkCallableAndCallExecute(self):
+    def call(self):
         if self.callable == 1:
             if self.depth == "minimum":
                 return self.execute_avoid_1D_depth_minimum()
@@ -621,7 +621,7 @@ class STAY(TASK):
         if self.main.getFinish() < self.t2:
             self.main.setFinish(self.t2)
 
-    def checkCallableAndCallExecute(self):
+    def call(self):
         if self.callable == 1:
             if self.depth == "minimum":
                 return self.execute_stay_1D_depth_minimum()

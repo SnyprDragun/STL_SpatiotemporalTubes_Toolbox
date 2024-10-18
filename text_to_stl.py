@@ -106,6 +106,10 @@ class TextToSTL():
             value = input(f"Enter a value for ALWAYS[{i}]: ")
             self.eventually_always_dict[f'ALWAYS[{i}]'] = value
 
+    def replace_eventually_always_with_brackets(self, input_str):
+        output = input_str.replace('EVENTUALLYALWAYS', 'EVENTUALLY[ALWAYS')
+        return output.replace('ALWAYSEVENTUALLY', 'ALWAYS[EVENTUALLY')
+
     def replace_eventually_always_with_values(self, input_str):
         eventually_count = 0
         always_count = 0
@@ -164,14 +168,22 @@ class TextToSTL():
 
     def call(self):
         self.class_phrase = self.remove_spaces(self.remove_brackets_and_evaluate(self.semantic))
+        print("1: ", self.class_phrase)
         self.count_eventually_always(self.class_phrase)
+        # enter eventually always logic
+            # replace EVENTUALLYALWAYS with EVENTUALLY[ALWAYS
+        self.class_phrase = self.replace_eventually_always_with_brackets(self.class_phrase)
         self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(self.replace_eventually_always_with_values(self.class_phrase))))
+        print("2: ", self.class_phrase)
         self.count_and_map_T_O(self.class_phrase)
         self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase))
-        print(self.class_phrase)
-        self.execute()
+        print("3: ", self.class_phrase)
+        
+        # print(self.class_phrase)
+        # self.execute()
 
 semantic = "(((◊ T1 ∨ ◊ T2) ∧ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
+semantic = "(◊ (□ T1))"
 TextToSTL(semantic, 10, 1, 0.5, 1).call()
 
 ############################ tasks:

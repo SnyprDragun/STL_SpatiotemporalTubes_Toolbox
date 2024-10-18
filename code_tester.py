@@ -2150,3 +2150,7 @@
 # stages = remove_brackets_and_evaluate(input_str)
 # for i, stage in enumerate(stages, 1):
 #     print(f"Stage {i}: {stage}")
+
+
+# c = 5
+# print(c if not None else None)
