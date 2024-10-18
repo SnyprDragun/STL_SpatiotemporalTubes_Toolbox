@@ -18,14 +18,8 @@ class TextToSTL():
         phrase = phrase.replace('◊', 'EVENTUALLY')
         phrase = phrase.replace('□', 'ALWAYS')
 
-        # Handle negations, wrapping ¬ Oₓ as [AVOID[Oₓ]]
         phrase = re.sub(r'¬\s*(O\d+)', r'[AVOID[\1]]', phrase)
-        
-        # Replace T_x terms with REACH[T_x] only if not already wrapped in REACH[]
-        phrase = re.sub(r'\b(T\d+)\b(?!\])', r'REACH[\1]', phrase)
-
-        # Wrap REACH[Tₓ] with [REACH[Tₓ]]
-        phrase = re.sub(r'REACH\[(T\d+)\]', r'[REACH[\1]]', phrase)
+        phrase = re.sub(r'\bT(\d+)\b(?![^\[]*\])', r'[REACH[T\1]]', phrase)
 
         if '∧' in phrase:
             parts = phrase.split('∧')
@@ -44,13 +38,10 @@ class TextToSTL():
         while '(' in stages[-1] or ')' in stages[-1]:
             innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
             evaluated_content = [self.evaluate(content) for content in innermost_content]
-
-            # print("Evaluated content:", ', '.join(evaluated_content))
-
             new_stage = stages[-1]
+
             for original, evaluated in zip(innermost_content, evaluated_content):
                 new_stage = new_stage.replace(f"({original})", evaluated, 1)
-                
             stages.append(new_stage)
 
         return stages
@@ -65,8 +56,8 @@ class TextToSTL():
         output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{self.object_identifier},')
         output_str = output_str.replace('ALWAYS[', f'ALWAYS[{self.object_identifier},')
 
-        output_str = output_str.replace('REACH[', f'REACH[stl_obj_{self.object_identifier}, ')
-        output_str = output_str.replace('AVOID[', f'AVOID[stl_obj_{self.object_identifier}, ')
+        output_str = output_str.replace('REACH[', f'REACH[stl_obj_{self.object_identifier}.main, ')
+        output_str = output_str.replace('AVOID[', f'AVOID[stl_obj_{self.object_identifier}.main, ')
 
         return output_str
 
@@ -103,19 +94,15 @@ class TextToSTL():
         return input_str
 
     def count_eventually_always(self, text):
-        # Count and find all instances of EVENTUALLY and ALWAYS
         eventually_matches = re.findall(r'EVENTUALLY', text)
         always_matches = re.findall(r'ALWAYS', text)
 
-        # Create a dictionary to store values for each EVENTUALLY and ALWAYS instance
         event_dict = {}
 
-        # Get user input for each EVENTUALLY occurrence
         for i, _ in enumerate(eventually_matches, start=1):
             value = input(f"Enter a value for EVENTUALLY[{i}]: ")
             event_dict[f'EVENTUALLY[{i}]'] = value
 
-        # Get user input for each ALWAYS occurrence
         for i, _ in enumerate(always_matches, start=1):
             value = input(f"Enter a value for ALWAYS[{i}]: ")
             event_dict[f'ALWAYS[{i}]'] = value
@@ -124,18 +111,23 @@ class TextToSTL():
 
     def replace_eventually_always_with_values(self, input_str):
         eventually_count = 0
+        always_count = 0
 
         def replace_eventually_match(match):
             nonlocal eventually_count
             eventually_count += 1
-            # Construct the key to look up in the dictionary
             key = f'EVENTUALLY[{eventually_count}]'
-            # Get the value from the dictionary, defaulting to an empty string if not found
             value = self.event_dict.get(key, "")
             return f'EVENTUALLY[{value},'
+        input_str = re.sub(r'EVENTUALLY\[', replace_eventually_match, input_str)
 
-        # Use regex to replace EVENTUALLY[ occurrences
-        result = re.sub(r'EVENTUALLY\[\[', replace_eventually_match, input_str)
+        def replace_always_match(match):
+            nonlocal always_count
+            always_count += 1
+            key = f'ALWAYS[{always_count}]'
+            value = self.event_dict.get(key, "")
+            return f'ALWAYS[{value},'
+        result = re.sub(r'ALWAYS\[', replace_always_match, input_str)
 
         return result
 
@@ -168,7 +160,8 @@ class TextToSTL():
         + 'stl_obj_' + str(self.object_identifier) + ' = STL(' + str(self.object_identifier) + ', SeqReachAvoidStay(' + str(self.degree) + ', ' + str(self.dimension) + ', ' + str(self.step) + ', ' + str(self.thickness) + '))\n' \
         + 'obj = ' + self.class_phrase + '\n' \
         + 'obj.return_value = False\n' \
-        + 'obj.call()'
+        + 'obj.call()\n' \
+        + 'stl_obj_' + str(self.object_identifier) + '.plotter()'
 
         self.create_and_run_python_file(file_name, content)
 
@@ -178,7 +171,6 @@ class TextToSTL():
         print("1: ", self.class_phrase)
 
         self.event_dict = self.count_eventually_always(self.class_phrase)
-        #call eventually/always value replacer here
         self.class_phrase = self.replace_eventually_always_with_values(self.class_phrase)
         print("2: ", self.class_phrase)
         print("EVENTUALLY/ALWAYS dict:", self.event_dict)
@@ -199,7 +191,7 @@ class TextToSTL():
 
         self.execute()
 
-semantic = "(((◊ T1 ∨ ◊ T2) ∨ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
+semantic = "(((◊ T1 ∨ ◊ T2) ∧ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
 x = TextToSTL(semantic, 10, 1, 0.5, 1)
 x.call()
 

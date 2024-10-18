@@ -6,7 +6,7 @@ from action_classes import *
 from error_handling import *
 from seq_reach_avoid_stay import *
 
-stl2 = STL(1, SeqReachAvoidStay(16, 2, 0.5, 1))
+# stl2 = STL(1, SeqReachAvoidStay(16, 2, 0.5, 1))
 
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1, 0, 1)), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3, 2, 3))).call()
 # obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)).call(), EVENTUALLY(1, 4, 5, REACH(stl2.main, 2, 3, 2, 3)).call()).call()
@@ -24,16 +24,17 @@ stl2 = STL(1, SeqReachAvoidStay(16, 2, 0.5, 1))
 
 
 #------ ALWAYS EVENTUALLY CASE -----#
-obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
-               EVENTUALLY(1, 3, 4, REACH(stl2.main, 7, 8, 11, 12)),
-               EVENTUALLY(1, 6, 7, REACH(stl2.main, 10, 11, 7, 8)),
-               EVENTUALLY(1, 9, 10, REACH(stl2.main, 7, 8, 11, 12)),
-               EVENTUALLY(1, 12, 13, REACH(stl2.main, 11, 12, 7, 8)),
-               EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15))
-            ).call()
+# obj2 = AND(1, EVENTUALLY(1, 0, 1, REACH(stl2.main, 0, 1, 0, 1)), 
+#                EVENTUALLY(1, 3, 4, REACH(stl2.main, 7, 8, 11, 12)),
+#                EVENTUALLY(1, 6, 7, REACH(stl2.main, 10, 11, 7, 8)),
+#                EVENTUALLY(1, 9, 10, REACH(stl2.main, 7, 8, 11, 12)),
+#                EVENTUALLY(1, 12, 13, REACH(stl2.main, 11, 12, 7, 8)),
+#                EVENTUALLY(1, 14, 15, REACH(stl2.main, 14, 15, 14, 15))
+#             ).call()
 #-----------------------------------#
 
-stl2.plotter()
+# stl2.plotter()
+
 
 
                 #####        #####       #####       #######
