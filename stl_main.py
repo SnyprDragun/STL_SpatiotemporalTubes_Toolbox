@@ -78,11 +78,11 @@ class OR(STL):
             self.main = a_instance.main
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
-        
+
         self.reach_or_targets = []
         self.avoid_or_targets = []
         self.stay_or_targets = []
-        
+
         for instance in self.instances:
             if isinstance(instance.task, REACH):
                 self.reach_or_targets.append(instance.task.local_setpoint)
@@ -90,59 +90,90 @@ class OR(STL):
                 self.avoid_or_targets.append(instance.task.local_obstacle)
             if isinstance(instance.task, STAY):
                 self.stay_or_targets.append(instance.task.local_setpoint)
-    
+
         self.all_or_targets = self.reach_or_targets + self.avoid_or_targets + self.stay_or_targets
         self.goal = [3, 4]
 
     def add_resultant(self):
-        if self.reach_or_targets != []:
-            print("OR reach-target options: ", self.reach_or_targets)
-            self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            self.main.solver.add(constraints)
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                if self.reach_or_targets != [] and self.avoid_or_targets == []:
+                    print("OR reach-target options: ", self.reach_or_targets)
+                    self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
 
-        elif self.avoid_or_targets != []:
-            print("OR avoid-target options: ", self.avoid_or_targets)
-            self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            self.main.solver.add(constraints)
+                elif self.avoid_or_targets != [] and self.reach_or_targets == []:
+                    print("OR avoid-target options: ", self.avoid_or_targets)
+                    self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
 
-        elif self.reach_or_targets != [] and self.avoid_or_targets != []:
-            print("All OR target options: ", self.all_or_targets)
-            self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            self.main.solver.add(constraints)
+                elif self.reach_or_targets != [] and self.avoid_or_targets != []:
+                    print("All OR target options: ", self.all_or_targets)
+                    self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
 
-        else:
-            raise ValueError("No options in 'OR' block!")
+                else:
+                    raise ValueError("No options in 'OR' block!")
+                
+                for constraint in all_constraints:
+                    self.main.solver.add(constraint)
+
+            elif isinstance(instance, AND):
+                for constraint in instance.call():
+                    self.main.solver.add(constraint)
+
+            elif isinstance(instance, OR):
+                self.main.solver.add(instance.call())
+
+            elif isinstance(instance, NOT) or isinstance(instance, IMPLIES) or isinstance(instance, UNTIL) or isinstance(instance, REACH) or isinstance(instance, AVOID) or isinstance(instance, STAY):
+                print(instance.__class__.__name__, "is not handeled for OR")
+
+            else:
+                print("Unknown instance")
 
     def return_resultant(self):
-        if self.reach_or_targets != [] and self.avoid_or_targets == []:
-            print("OR reach-target options: ", self.reach_or_targets)
-            self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            return constraints
+        all_constraints = []
 
-        elif self.avoid_or_targets != [] and self.reach_or_targets == []:
-            print("OR avoid-target options: ", self.avoid_or_targets)
-            self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            return constraints
-        
-        elif self.reach_or_targets != [] and self.avoid_or_targets != []:
-            print("All OR target options: ", self.all_or_targets)
-            self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            return constraints
-        
-        else:
-            raise ValueError("No options in 'OR' block!")
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                if self.reach_or_targets != [] and self.avoid_or_targets == []:
+                    print("OR reach-target options: ", self.reach_or_targets)
+                    self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
+
+                elif self.avoid_or_targets != [] and self.reach_or_targets == []:
+                    print("OR avoid-target options: ", self.avoid_or_targets)
+                    self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
+
+                elif self.reach_or_targets != [] and self.avoid_or_targets != []:
+                    print("All OR target options: ", self.all_or_targets)
+                    self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
+
+                else:
+                    raise ValueError("No options in 'OR' block!")
+
+            elif isinstance(instance, AND):
+                for constraint in instance.call():
+                    all_constraints.append(constraint)
+
+            elif isinstance(instance, OR):
+                all_constraints = instance.call()
+
+            elif isinstance(instance, NOT) or isinstance(instance, IMPLIES) or isinstance(instance, UNTIL) or isinstance(instance, REACH) or isinstance(instance, AVOID) or isinstance(instance, STAY):
+                print(instance.__class__.__name__, "is not handeled for OR")
+
+            else:
+                print("Unknown instance")
+
+        return all_constraints
 
     def call(self):
         if self.return_value == True:
@@ -211,7 +242,7 @@ class EVENTUALLY(STL):
             self.main = a_instance.main
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
-    
+
     def add_resultant(self):
         '''adds constraints'''
         if isinstance(self.task, REACH) or isinstance(self.task, AVOID) or isinstance(self.task, STAY):
