@@ -2154,3 +2154,70 @@
 
 # c = 5
 # print(c if not None else None)
+
+class REACH:
+    def __init__(self, stl_main, start, end):
+        self.stl_main = stl_main
+        self.start_time = start
+        self.end_time = end
+
+class EVENTUALLY:
+    def __init__(self, priority, start, end, inner_formula):
+        self.priority = priority
+        self.start_time = start
+        self.end_time = end
+        self.inner_formula = inner_formula
+
+    def __repr__(self):
+        return f"EVENTUALLY({self.priority}, {self.start_time}, {self.end_time}, {self.inner_formula})"
+
+class ALWAYS:
+    def __init__(self, priority, start, end, inner_formula):
+        self.priority = priority
+        self.start_time = start
+        self.end_time = end
+        self.inner_formula = inner_formula
+
+    def __repr__(self):
+        return f"ALWAYS({self.priority}, {self.start_time}, {self.end_time}, {self.inner_formula})"
+
+def expand_always_eventually(obj):
+    # Extract time intervals from ALWAYS and EVENTUALLY
+    always_start = obj.start_time  # 0
+    always_end = obj.end_time      # 10
+    eventually_duration = obj.inner_formula.end_time - obj.inner_formula.start_time  # 2 - 0 = 2
+    
+    expanded_eventually = []
+    
+    # Loop through the ALWAYS time frame, incrementing by eventually_duration
+    current_time = always_start
+    while current_time < always_end:
+        next_time = min(current_time + eventually_duration, always_end)
+        
+        # Create new EVENTUALLY objects for each time slice
+        new_eventually = EVENTUALLY(
+            obj.inner_formula.priority,
+            current_time, next_time, obj.inner_formula.inner_formula
+        )
+        expanded_eventually.append(new_eventually)
+        
+        current_time = next_time
+    
+    return expanded_eventually
+
+# Usage
+# Create the inner REACH object
+reach_formula = REACH("stl.main", 0, 1)
+
+# Create the EVENTUALLY object inside ALWAYS
+eventually_formula = EVENTUALLY(1, 0, 2, reach_formula)
+
+# Create the ALWAYS object that contains the EVENTUALLY
+always_obj = ALWAYS(1, 0, 10, eventually_formula)
+
+# Run the function
+expanded_obj = expand_always_eventually(always_obj)
+
+# Print the output
+for obj in expanded_obj:
+    print(type(obj))
