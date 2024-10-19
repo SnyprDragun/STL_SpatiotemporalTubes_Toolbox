@@ -84,12 +84,15 @@ class OR(STL):
         self.stay_or_targets = []
 
         for instance in self.instances:
-            if isinstance(instance.task, REACH):
-                self.reach_or_targets.append(instance.task.local_setpoint)
-            if isinstance(instance.task, AVOID):
-                self.avoid_or_targets.append(instance.task.local_obstacle)
-            if isinstance(instance.task, STAY):
-                self.stay_or_targets.append(instance.task.local_setpoint)
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                if isinstance(instance.task, REACH):
+                    self.reach_or_targets.append(instance.task.local_setpoint)
+                elif isinstance(instance.task, AVOID):
+                    self.avoid_or_targets.append(instance.task.local_obstacle)
+                elif isinstance(instance.task, STAY):
+                    self.stay_or_targets.append(instance.task.local_setpoint)
+                else:
+                    print("Other instance: ", self.instances)
 
         self.all_or_targets = self.reach_or_targets + self.avoid_or_targets + self.stay_or_targets
         self.goal = [3, 4]

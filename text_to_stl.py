@@ -187,4 +187,4 @@ TextToSTL(semantic, 10, 1, 0.5, 1).call()
 # 1. Handle always eventually (loop eventually in always time frame)                                    -> PENDING
 # 2. Handle eventually always (stay, might circle around in same position or like climb up with time)   -> DONE
 # 3. Handle global [goal] for OR cases                                                                  -> PENDING
-# 4. Handle OR-OR cascade in stl_main                                                                   -> PENDING
+# 4. Handle OR-OR cascade in stl_main                                                                   -> DONE

@@ -35,11 +35,26 @@ from seq_reach_avoid_stay import *
 
 # stl2.plotter()
 
-stl_obj_1 = STL(1, SeqReachAvoidStay(3, 2, 0.05, 1))
-obj = AND(1, EVENTUALLY(1, 0, 1, REACH(stl_obj_1.main, 0, 1, 0, 1)), EVENTUALLY(1, 3, 10, ALWAYS(1, 3, 4, REACH(stl_obj_1.main, 1, 2, 1, 2))))
-obj.return_value = False
-obj.call()
-stl_obj_1.plotter()
+# stl_obj_1 = STL(1, SeqReachAvoidStay(3, 2, 0.05, 1))
+# obj = AND(1, EVENTUALLY(1, 0, 1, REACH(stl_obj_1.main, 0, 1, 0, 1)), EVENTUALLY(1, 3, 10, ALWAYS(1, 3, 4, REACH(stl_obj_1.main, 1, 2, 1, 2))))
+# obj.return_value = False
+# obj.call()
+# stl_obj_1.plotter()
+
+
+# stl = STL(1, SeqReachAvoidStay(5, 1, 0.5, 1))
+# obj = AND(1, EVENTUALLY(1, 0, 1, REACH(stl.main, 0, 1)),
+#             OR(1, EVENTUALLY(1, 2, 3, REACH(stl.main, 2, 3)),
+#                   OR(1, EVENTUALLY(1, 4, 5, REACH(stl.main, 4, 5)),
+#                         EVENTUALLY(1, 6, 7, REACH(stl.main, 6, 7)))))
+
+# # obj = OR(1, OR(1, EVENTUALLY(1, 0, 1, REACH(stl.main, 0, 1))))
+
+# obj.return_value = False
+# obj.call()
+# stl.plotter()
+
+
 
 
                 #####        #####       #####       #######
