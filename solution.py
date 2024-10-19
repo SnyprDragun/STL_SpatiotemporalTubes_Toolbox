@@ -50,9 +50,12 @@ from seq_reach_avoid_stay import *
 
 # # obj = OR(1, OR(1, EVENTUALLY(1, 0, 1, REACH(stl.main, 0, 1))))
 
-# obj.return_value = False
-# obj.call()
-# stl.plotter()
+stl = STL(1, SeqReachAvoidStay(5, 1, 0.5, 1))
+obj = ALWAYS(1, 0, 10, EVENTUALLY(1, 0, 2, REACH(stl.main, 0, 1)))
+
+obj.return_value = False
+obj.call()
+stl.plotter()
 
 
 
