@@ -94,7 +94,7 @@ class SeqReachAvoidStay():
                 gamma1_U = self.gammas(t)[1]
                 constraint_x = z3.And((gamma1_U - gamma1_L) > 0.5, (gamma1_U - gamma1_L) < self.tube_thickness)
                 self.solver.add(constraint_x)
-                
+                self.solver.add(z3.And(gamma1_L > 0, gamma1_U > 0))
                 x_gamma_dot = (self.gamma_dot(t)[0] + self.gamma_dot(t)[1]) / 2
                 # self.solver.add(x_gamma_dot < 10000000)
 
