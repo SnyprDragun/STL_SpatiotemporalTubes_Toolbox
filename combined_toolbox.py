@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/homebrew/bin/python3.11
 '''SIGNAL TEMPORAL LOGIC - SPATIOTEMPPORAL TUBES - TOOLBOX'''
 
 import re
@@ -11,6 +11,7 @@ import matplotlib.patches as patches
 
 from solver import *
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
 
 class SeqReachAvoidStay():
     '''class representing constraints on trajectory'''
@@ -209,9 +210,9 @@ class SeqReachAvoidStay():
 
         fig2 = plt.figure(2)
         dx = fig2.add_subplot(111, projection='3d')
-        dx.set_xlim(0, 15) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
-        dx.set_ylim(0, 15) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
-        dx.set_zlim(0, 15) ## dx.set_zlim(self.getStart(), self.getFinish())
+        dx.set_xlim(0, 20) ## dx.set_xlim(self.get_x_start(), self.get_x_finish())
+        dx.set_ylim(0, 20) ## dx.set_ylim(self.get_y_start(), self.get_y_finish())
+        dx.set_zlim(0, 20) ## dx.set_zlim(self.getStart(), self.getFinish())
         dx.set_xlabel('X Axis')
         dx.set_ylabel('Y Axis')
         dx.set_zlabel('Time Axis')
@@ -458,6 +459,7 @@ class SeqReachAvoidStay():
                 self.plot_for_2D(C_fin)
             else:
                 self.plot_for_3D(C_fin)
+            self.print_equation(C_fin)
 
             end = time.time()
             self.displayTime(start, end)
@@ -468,6 +470,15 @@ class SeqReachAvoidStay():
             print("range: ", self.getRange(), "\nstart: ", self.getStart(), "\nfinish: ", self.getFinish(), "\nstep: ", self._step)
             end = time.time()
             self.displayTime(start, end)
+
+    def print_equation(self, C):
+        for i in range(2 * self.dimension):
+            print("gamma", i, "= ", end = "")
+            power = 0
+            for j in range(self.degree + 1):
+                print("C", j + i * (self.degree + 1), "* t.^", power, "+ ", end = "")
+                power += 1
+            print("\n")
 
     def test_plot(self):
         '''method to plot the tubes'''
@@ -733,7 +744,7 @@ class REACH(TASK):
         if self.main.getFinish() < self.t2:
             self.main.setFinish(self.t2)
 
-    def checkCallableAndCallExecute(self):
+    def call(self):
         if self.callable == 1:
             if self.depth == "minimum":
                 return self.execute_reach_1D_depth_minimum()
@@ -1015,7 +1026,7 @@ class AVOID(TASK):
         if self.main.getFinish() < self.t2:
             self.main.setFinish(self.t2)
 
-    def checkCallableAndCallExecute(self):
+    def call(self):
         if self.callable == 1:
             if self.depth == "minimum":
                 return self.execute_avoid_1D_depth_minimum()
@@ -1303,7 +1314,7 @@ class STAY(TASK):
         if self.main.getFinish() < self.t2:
             self.main.setFinish(self.t2)
 
-    def checkCallableAndCallExecute(self):
+    def call(self):
         if self.callable == 1:
             if self.depth == "minimum":
                 return self.execute_stay_1D_depth_minimum()
@@ -1567,7 +1578,7 @@ class STL():
 class AND(STL):
     def __init__(self, identifier, *instances):
         self.instances = instances
-        self.return_value = False
+        self.return_value = True
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
@@ -1621,71 +1632,105 @@ class OR(STL):
             self.main = a_instance.main
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
-        
+
         self.reach_or_targets = []
         self.avoid_or_targets = []
         self.stay_or_targets = []
-        
+
         for instance in self.instances:
-            if isinstance(instance.task, REACH):
-                self.reach_or_targets.append(instance.task.local_setpoint)
-            if isinstance(instance.task, AVOID):
-                self.avoid_or_targets.append(instance.task.local_obstacle)
-            if isinstance(instance.task, STAY):
-                self.stay_or_targets.append(instance.task.local_setpoint)
-    
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                if isinstance(instance.task, REACH):
+                    self.reach_or_targets.append(instance.task.local_setpoint)
+                elif isinstance(instance.task, AVOID):
+                    self.avoid_or_targets.append(instance.task.local_obstacle)
+                elif isinstance(instance.task, STAY):
+                    self.stay_or_targets.append(instance.task.local_setpoint)
+                else:
+                    print("Other instance: ", self.instances)
+
         self.all_or_targets = self.reach_or_targets + self.avoid_or_targets + self.stay_or_targets
-        self.goal = [3, 4, 3, 4, 3, 4]
+        self.goal = [3, 4]
 
     def add_resultant(self):
-        if self.reach_or_targets != []:
-            print("OR reach-target options: ", self.reach_or_targets)
-            self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            self.main.solver.add(constraints)
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                if self.reach_or_targets != [] and self.avoid_or_targets == []:
+                    print("OR reach-target options: ", self.reach_or_targets)
+                    self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
 
-        elif self.avoid_or_targets != []:
-            print("OR avoid-target options: ", self.avoid_or_targets)
-            self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            self.main.solver.add(constraints)
+                elif self.avoid_or_targets != [] and self.reach_or_targets == []:
+                    print("OR avoid-target options: ", self.avoid_or_targets)
+                    self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
 
-        elif self.reach_or_targets != [] and self.avoid_or_targets != []:
-            print("All OR target options: ", self.all_or_targets)
-            self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            self.main.solver.add(constraints)
+                elif self.reach_or_targets != [] and self.avoid_or_targets != []:
+                    print("All OR target options: ", self.all_or_targets)
+                    self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
 
-        else:
-            raise ValueError("No options in 'OR' block!")
+                else:
+                    raise ValueError("No options in 'OR' block!")
+                
+                for constraint in all_constraints:
+                    self.main.solver.add(constraint)
+
+            elif isinstance(instance, AND):
+                for constraint in instance.call():
+                    self.main.solver.add(constraint)
+
+            elif isinstance(instance, OR):
+                self.main.solver.add(instance.call())
+
+            elif isinstance(instance, NOT) or isinstance(instance, IMPLIES) or isinstance(instance, UNTIL) or isinstance(instance, REACH) or isinstance(instance, AVOID) or isinstance(instance, STAY):
+                print(instance.__class__.__name__, "is not handeled for OR")
+
+            else:
+                print("Unknown instance")
 
     def return_resultant(self):
-        if self.reach_or_targets != [] and self.avoid_or_targets == []:
-            print("OR reach-target options: ", self.reach_or_targets)
-            self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            return constraints
+        all_constraints = []
 
-        elif self.avoid_or_targets != [] and self.reach_or_targets == []:
-            print("OR avoid-target options: ", self.avoid_or_targets)
-            self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            return constraints
-        
-        elif self.reach_or_targets != [] and self.avoid_or_targets != []:
-            print("All OR target options: ", self.all_or_targets)
-            self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
-            print("choice: ", self.choice)
-            constraints = self.instances[self.choice].call()
-            return constraints
-        
-        else:
-            raise ValueError("No options in 'OR' block!")
+        for instance in self.instances:
+            if isinstance(instance, EVENTUALLY) or isinstance(instance, ALWAYS):
+                if self.reach_or_targets != [] and self.avoid_or_targets == []:
+                    print("OR reach-target options: ", self.reach_or_targets)
+                    self.choice = self.reach_or_targets.index(self.main.min_distance_element(self.reach_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
+
+                elif self.avoid_or_targets != [] and self.reach_or_targets == []:
+                    print("OR avoid-target options: ", self.avoid_or_targets)
+                    self.choice = self.avoid_or_targets.index(self.main.min_distance_element(self.avoid_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
+
+                elif self.reach_or_targets != [] and self.avoid_or_targets != []:
+                    print("All OR target options: ", self.all_or_targets)
+                    self.choice = self.all_or_targets.index(self.main.min_distance_element(self.all_or_targets, self.goal))
+                    print("choice: ", self.choice)
+                    all_constraints = self.instances[self.choice].call()
+
+                else:
+                    raise ValueError("No options in 'OR' block!")
+
+            elif isinstance(instance, AND):
+                for constraint in instance.call():
+                    all_constraints.append(constraint)
+
+            elif isinstance(instance, OR):
+                all_constraints = instance.call()
+
+            elif isinstance(instance, NOT) or isinstance(instance, IMPLIES) or isinstance(instance, UNTIL) or isinstance(instance, REACH) or isinstance(instance, AVOID) or isinstance(instance, STAY):
+                print(instance.__class__.__name__, "is not handeled for OR")
+
+            else:
+                print("Unknown instance")
+
+        return all_constraints
 
     def call(self):
         if self.return_value == True:
@@ -1748,18 +1793,81 @@ class EVENTUALLY(STL):
         task.t2 = t2
         self.task = task
         self.return_value = True
+        self.identifier = identifier
         a_instance = STL.get_instance(identifier)
         if a_instance:
             self.main = a_instance.main
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
 
-    def call(self):
-        all_constraints = self.task.checkCallableAndCallExecute()
-        if self.return_value == True:
-            return all_constraints
+    def add_resultant(self):
+        '''adds constraints'''
+        if isinstance(self.task, REACH) or isinstance(self.task, AVOID) or isinstance(self.task, STAY):
+            constraints = self.task.call()
+            for constraint in constraints:
+                self.main.solver.add(constraint)
+        elif isinstance(self.task, ALWAYS):
+            always = self.task
+            if isinstance(always.task, REACH) or isinstance(always.task, STAY):
+                if self.main.dimension == 1:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2)).call()
+                elif self.main.dimension == 2:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2)).call()
+                else:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2, always.task.z1, always.task.z2)).call()
+            elif isinstance(always.task, AVOID):
+                if self.main.dimension == 1:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, AVOID(always.task.main, always.task.x1, always.task.x2)).call()
+                elif self.main.dimension == 2:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, AVOID(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2)).call()
+                else:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, AVOID(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2, always.task.z1, always.task.z2)).call()
+
+            for constraint in constraints:
+                self.main.solver.add(constraint)
+        elif isinstance(self.task, EVENTUALLY) or isinstance(self.task, IMPLIES) or isinstance(self.task, UNTIL) or isinstance(self.task, NOT):
+            print(self.task.__class__.__name__, "not handeled for EVENTUALLY")
         else:
-            self.main.solver.add(all_constraints)
+            print("Unknown Instance")
+
+    def return_resultant(self):
+        '''returns constraints'''
+        all_constraints =[]
+
+        if isinstance(self.task, REACH) or isinstance(self.task, AVOID) or isinstance(self.task, STAY):
+            constraints = self.task.call()
+            for constraint in constraints:
+                all_constraints.append(constraint)
+        elif isinstance(self.task, ALWAYS):
+            always = self.task
+            if isinstance(always.task, REACH) or isinstance(always.task, STAY):
+                if self.main.dimension == 1:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2)).call()
+                elif self.main.dimension == 2:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2)).call()
+                else:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, STAY(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2, always.task.z1, always.task.z2)).call()
+            elif isinstance(always.task, AVOID):
+                if self.main.dimension == 1:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, AVOID(always.task.main, always.task.x1, always.task.x2)).call()
+                elif self.main.dimension == 2:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, AVOID(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2)).call()
+                else:
+                    constraints = EVENTUALLY(self.identifier, always.t1, always.t2, AVOID(always.task.main, always.task.x1, always.task.x2, always.task.y1, always.task.y2, always.task.z1, always.task.z2)).call()
+
+            for constraint in constraints:
+                all_constraints.append(constraint)
+        elif isinstance(self.task, EVENTUALLY) or isinstance(self.task, IMPLIES) or isinstance(self.task, UNTIL) or isinstance(self.task, NOT):
+            print(self.task.__class__.__name__, "not handeled for EVENTUALLY")
+        else:
+            print("Unknown Instance")
+        return all_constraints
+
+    def call(self):
+        if self.return_value == True:
+            return self.return_resultant()
+        else:
+            self.add_resultant()
 
 
 class ALWAYS(STL):
@@ -1775,12 +1883,58 @@ class ALWAYS(STL):
         else:
             raise ValueError(f"No instance of A found for identifier '{identifier}'")
 
-    def call(self):
-        all_constraints = self.task.checkCallableAndCallExecute()
-        if self.return_value == True:
-            return all_constraints
+    def add_resultant(self):
+        '''adds constraints'''
+        if isinstance(self.task, REACH) or isinstance(self.task, AVOID) or isinstance(self.task, STAY):
+            constraints = self.task.call()
+            for constraint in constraints:
+                self.main.solver.add(constraint)
+        elif isinstance(self.task, EVENTUALLY):
+            eventually = self.task
+            if self.main.dimension == 1:
+                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2)).call()
+            elif self.main.dimension == 2:
+                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2, eventually.task.y1, eventually.task.y2)).call()
+            else:
+                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2, eventually.task.y1, eventually.task.y2, eventually.task.z1, eventually.task.z2)).call()
+            
+            for constraint in constraints:
+                self.main.solver.add(constraint)
+        elif isinstance(self.task, ALWAYS) or isinstance(self.task, IMPLIES) or isinstance(self.task, UNTIL) or isinstance(self.task, NOT):
+            print(self.task.__class__.__name__, "not handeled for ALWAYS")
         else:
-            self.main.solver.add(all_constraints)
+            print("Unknown Instance")
+
+    def return_resultant(self):
+        '''returns constraints'''
+        all_constraints =[]
+
+        if isinstance(self.task, REACH) or isinstance(self.task, AVOID) or isinstance(self.task, STAY):
+            constraints = self.task.call()
+            for constraint in constraints:
+                all_constraints.append(constraint)
+        elif isinstance(self.task, EVENTUALLY):
+            eventually = self.task
+            if self.main.dimension == 1:
+                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2)).call()
+            elif self.main.dimension == 2:
+                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2, eventually.task.y1, eventually.task.y2)).call()
+            else:
+                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2, eventually.task.y1, eventually.task.y2, eventually.task.z1, eventually.task.z2)).call()
+            
+            for constraint in constraints:
+                all_constraints.append(constraint)
+        elif isinstance(self.task, ALWAYS) or isinstance(self.task, IMPLIES) or isinstance(self.task, UNTIL) or isinstance(self.task, NOT):
+            print(self.task.__class__.__name__, "not handeled for ALWAYS")
+        else:
+            print("Unknown Instance")
+        return all_constraints
+
+    def call(self):
+        if self.return_value == True:
+            return self.return_resultant()
+        else:
+            self.add_resultant()
 
 
 class UNTIL(STL):
@@ -1875,19 +2029,16 @@ class TextToSTL():
         self.thickness = thickness
         self.class_phrase = None
         self.object_identifier = 1
+        self.eventually_always_dict = None
+        self.T_dict = {}
+        self.O_dict = {}
 
     def evaluate(self, phrase):
         phrase = phrase.replace('◊', 'EVENTUALLY')
         phrase = phrase.replace('□', 'ALWAYS')
 
-        # Handle negations, wrapping ¬ Oₓ as [AVOID[Oₓ]]
         phrase = re.sub(r'¬\s*(O\d+)', r'[AVOID[\1]]', phrase)
-        
-        # Replace T_x terms with REACH[T_x] only if not already wrapped in REACH[]
-        phrase = re.sub(r'\b(T\d+)\b(?!\])', r'REACH[\1]', phrase)
-
-        # Wrap REACH[Tₓ] with [REACH[Tₓ]]
-        phrase = re.sub(r'REACH\[(T\d+)\]', r'[REACH[\1]]', phrase)
+        phrase = re.sub(r'\bT(\d+)\b(?![^\[]*\])', r'[REACH[T\1]]', phrase)
 
         if '∧' in phrase:
             parts = phrase.split('∧')
@@ -1906,16 +2057,13 @@ class TextToSTL():
         while '(' in stages[-1] or ')' in stages[-1]:
             innermost_content = re.findall(r'\(([^()]+)\)', stages[-1])
             evaluated_content = [self.evaluate(content) for content in innermost_content]
-
-            # print("Evaluated content:", ', '.join(evaluated_content))
-
             new_stage = stages[-1]
+
             for original, evaluated in zip(innermost_content, evaluated_content):
                 new_stage = new_stage.replace(f"({original})", evaluated, 1)
-                
             stages.append(new_stage)
 
-        return stages
+        return stages[-1]
 
     def remove_spaces(self, input_str):
         return input_str.replace(' ', '')
@@ -1923,11 +2071,12 @@ class TextToSTL():
     def replace_symbols_with_counter(self, input_str):
         output_str = input_str.replace('AND[', f'AND[{self.object_identifier},')
         output_str = output_str.replace('OR[', f'OR[{self.object_identifier},')
+
         output_str = output_str.replace('EVENTUALLY[', f'EVENTUALLY[{self.object_identifier},')
         output_str = output_str.replace('ALWAYS[', f'ALWAYS[{self.object_identifier},')
 
-        output_str = output_str.replace('REACH[', f'REACH[stl_obj_{self.object_identifier}, ')
-        output_str = output_str.replace('AVOID[', f'AVOID[stl_obj_{self.object_identifier}, ')
+        output_str = output_str.replace('REACH[', f'REACH[stl_obj_{self.object_identifier}.main, ')
+        output_str = output_str.replace('AVOID[', f'AVOID[stl_obj_{self.object_identifier}.main, ')
 
         return output_str
 
@@ -1938,30 +2087,67 @@ class TextToSTL():
     def count_and_map_T_O(self, input_str):
         T_matches = sorted(set(re.findall(r'\bT\d+\b', input_str)))
         O_matches = sorted(set(re.findall(r'\bO\d+\b', input_str)))
-        T_dict = {}
-        O_dict = {}
+
         print("Please provide values for each Tx and Ox term (enter comma-separated integers):")
 
         for T in T_matches:
             values = input(f"Enter values for {T}: ")
-            T_dict[T] = list(map(int, values.split(',')))
+            self.T_dict[T] = list(map(int, values.split(',')))
 
         for O in O_matches:
             values = input(f"Enter values for {O}: ")
-            O_dict[O] = list(map(int, values.split(',')))
+            self.O_dict[O] = list(map(int, values.split(',')))
 
-        return T_dict, O_dict
-
-    def replace_T_O_with_values(self, input_str, T_dict, O_dict):
-        for T, values in T_dict.items():
+    def replace_T_O_with_values(self, input_str):
+        for T, values in self.T_dict.items():
             value_str = str(values)
             input_str = re.sub(rf'{T}\)', f'{value_str[1:]}', input_str)
 
-        for O, values in O_dict.items():
+        for O, values in self.O_dict.items():
             value_str = str(values)
             input_str = re.sub(rf'{O}\)', f'{value_str[1:]}', input_str)
 
         return input_str
+
+    def count_eventually_always(self, text):
+        eventually_matches = re.findall(r'EVENTUALLY', text)
+        always_matches = re.findall(r'ALWAYS', text)
+
+        self.eventually_always_dict = {}
+
+        for i, _ in enumerate(eventually_matches, start=1):
+            value = input(f"Enter a value for EVENTUALLY[{i}]: ")
+            self.eventually_always_dict[f'EVENTUALLY[{i}]'] = value
+
+        for i, _ in enumerate(always_matches, start=1):
+            value = input(f"Enter a value for ALWAYS[{i}]: ")
+            self.eventually_always_dict[f'ALWAYS[{i}]'] = value
+
+    def replace_eventually_always_with_brackets(self, input_str):
+        output = input_str.replace('EVENTUALLYALWAYS', 'EVENTUALLY[ALWAYS')
+        return output.replace('ALWAYSEVENTUALLY', 'ALWAYS[EVENTUALLY')
+
+    def replace_eventually_always_with_values(self, input_str):
+        eventually_count = 0
+        always_count = 0
+
+        def replace_eventually_match(match):
+            nonlocal eventually_count
+            eventually_count += 1
+            key = f'EVENTUALLY[{eventually_count}]'
+            value = self.eventually_always_dict.get(key, "")
+            return f'EVENTUALLY[{value},'
+        input_str = re.sub(r'EVENTUALLY\[', replace_eventually_match, input_str)
+
+        def replace_always_match(match):
+            nonlocal always_count
+            always_count += 1
+            key = f'ALWAYS[{always_count}]'
+            value = self.eventually_always_dict.get(key, "")
+            return f'ALWAYS[{value},'
+        result = re.sub(r'ALWAYS\[', replace_always_match, input_str)
+
+        return result
 
     def create_and_run_python_file(self, file_name, content):
         with open(file_name, 'w') as f:
@@ -1980,39 +2166,42 @@ class TextToSTL():
 
     def execute(self):
         file_name = 'test_script.py'
-        content = '#!/usr/bin/env python3\n' \
+        content = '#!/opt/homebrew/bin/python3.11\n' \
         + '# This is an automatically generated Python script\n' \
-        + 'from solver import *\n' \
+        + 'from seq_reach_avoid_stay import *\n' \
         + 'from stl_main import *\n' \
-        + 'from text_to_stl import *\n' \
-        + 'from action_classes import *\n' \
-        + 'from error_handling import *\n' \
-        + 'from seq_reach_avoid_stay import *\n\n' \
+        + 'from action_classes import *\n\n' \
         + 'print("Hello from the new Python file!")\n' \
         + 'x = 5\n' \
         + 'y = 10\n' \
         + 'print(f"The sum of {x} and {y} is: {x + y}")\n\n' \
         + 'stl_obj_' + str(self.object_identifier) + ' = STL(' + str(self.object_identifier) + ', SeqReachAvoidStay(' + str(self.degree) + ', ' + str(self.dimension) + ', ' + str(self.step) + ', ' + str(self.thickness) + '))\n' \
         + 'obj = ' + self.class_phrase + '\n' \
-        + 'obj.call()'
+        + 'obj.return_value = False\n' \
+        + 'obj.call()\n' \
+        + 'stl_obj_' + str(self.object_identifier) + '.plotter()'
 
         self.create_and_run_python_file(file_name, content)
 
     def call(self):
-        stages = self.remove_brackets_and_evaluate(self.semantic)
-        # for i, stage in enumerate(stages, 1):
-        #     print(f"Stage {i}: {stage}")
+        self.class_phrase = self.remove_spaces(self.remove_brackets_and_evaluate(self.semantic))
+        print("1: ", self.class_phrase)
+        self.count_eventually_always(self.class_phrase)
+        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(self.replace_eventually_always_with_values(self.replace_eventually_always_with_brackets(self.class_phrase)))))
+        print("2: ", self.class_phrase)
+        self.count_and_map_T_O(self.class_phrase)
+        self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase))
+        print("3: ", self.class_phrase)
+        
+        # print(self.class_phrase)
+        # self.execute()
 
-        self.class_phrase = self.replace_brackets(self.replace_symbols_with_counter(self.remove_spaces(stages[-1])))
-        T_dict, O_dict = self.count_and_map_T_O(self.class_phrase)
-        self.class_phrase = self.replace_brackets(self.replace_T_O_with_values(self.class_phrase, T_dict, O_dict))
-
-        print("T_dict:", T_dict)
-        print("O_dict:", O_dict)
-        print(self.class_phrase)
-
-        self.execute()
-
-
-semantic = "(((◊ T1 ∨ ◊ T2) ∨ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
+semantic = "(((◊ T1 ∨ ◊ T2) ∧ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
+semantic = "(◊ (□ T1))"
 TextToSTL(semantic, 10, 1, 0.5, 1).call()
+
+############################ tasks:
+# 1. Handle always eventually (loop eventually in always time frame)                                    -> PENDING
+# 2. Handle eventually always (stay, might circle around in same position or like climb up with time)   -> DONE
+# 3. Handle global [goal] for OR cases                                                                  -> PENDING
+# 4. Handle OR-OR cascade in stl_main                                                                   -> DONE
