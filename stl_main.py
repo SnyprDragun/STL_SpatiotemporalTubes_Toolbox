@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 '''script for STL specifications'''
 import z3
-import random
 from action_classes import *
 from seq_reach_avoid_stay import *
 

@@ -5,8 +5,6 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-
-from solver import *
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 class SeqReachAvoidStay():
