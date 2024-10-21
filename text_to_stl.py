@@ -107,8 +107,8 @@ class TextToSTL():
             self.eventually_always_dict[f'ALWAYS[{i}]'] = value
 
     def replace_eventually_always_with_brackets(self, input_str):
-        output = input_str.replace('EVENTUALLYALWAYS', 'EVENTUALLY[ALWAYS')
-        return output.replace('ALWAYSEVENTUALLY', 'ALWAYS[EVENTUALLY')
+        output = re.sub(r'ALWAYSEVENTUALLY\[(.*?)\]', r'ALWAYS[EVENTUALLY[\1]]', input_str)
+        return re.sub(r'EVENTUALLYALWAYS\[(.*?)\]', r'EVENTUALLY[ALWAYS[\1]]', output)
 
     def replace_eventually_always_with_values(self, input_str):
         eventually_count = 0
@@ -177,11 +177,11 @@ class TextToSTL():
         print("3: ", self.class_phrase)
         
         # print(self.class_phrase)
-        self.execute()
+        # self.execute()
 
-semantic = "(((◊ T1 ∨ ◊ T2) ∧ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
-# semantic = "(◊ (□ T1))"
-# semantic = "(□ (◊ T1))"
+# semantic = "(((◊ T1 ∨ ◊ T2) ∧ (◊ T3)) ∧ (□ ¬ O1 ∧ □ ¬ O2 ∧ □ ¬ O3))"
+# semantic = "((◊ (□ T1)) ∧ (◊ T2))"
+semantic = "(□ (◊ T1))"
 TextToSTL(semantic, 10, 1, 0.5, 1).call()
 
 ############################ tasks:
@@ -189,4 +189,4 @@ TextToSTL(semantic, 10, 1, 0.5, 1).call()
 # 2. Handle eventually always (stay, might circle around in same position or like climb up with time)   -> DONE
 # 3. Handle global [goal] for OR cases                                                                  -> PENDING
 # 4. Handle OR-OR cascade in stl_main                                                                   -> DONE
-# 5. Handle always-eventually and eventually-always bracket closure                                     -> PENDING
+# 5. Handle always-eventually and eventually-always bracket closure                                     -> DONE
