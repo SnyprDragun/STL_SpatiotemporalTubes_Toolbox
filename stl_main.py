@@ -319,6 +319,7 @@ class EVENTUALLY(STL):
 class ALWAYS(STL):
     def __init__(self, identifier, t1, t2, task):
         task.always = True
+        self.identifier = identifier
         task.t1 = t1
         task.t2 = t2
         self.task = task
@@ -337,15 +338,16 @@ class ALWAYS(STL):
                 self.main.solver.add(constraint)
         elif isinstance(self.task, EVENTUALLY):
             eventually = self.task
-            if self.main.dimension == 1:
-                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2)).call()
-            elif self.main.dimension == 2:
-                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2, eventually.task.y1, eventually.task.y2)).call()
-            else:
-                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2, eventually.task.y1, eventually.task.y2, eventually.task.z1, eventually.task.z2)).call()
-            
-            for constraint in constraints:
-                self.main.solver.add(constraint)
+            eventually_duration = eventually.task.t2 - eventually.task.t1
+            current_time = eventually.t1
+
+            while current_time < eventually.t2:
+                next_time = min(current_time + eventually_duration, eventually.t2)
+                constraints = EVENTUALLY(self.identifier, current_time, next_time, eventually.task).call()
+                for constraint in constraints:
+                    self.main.solver.add(constraint)
+                current_time = next_time
+
         elif isinstance(self.task, ALWAYS) or isinstance(self.task, IMPLIES) or isinstance(self.task, UNTIL) or isinstance(self.task, NOT):
             print(self.task.__class__.__name__, "not handeled for ALWAYS")
         else:
@@ -361,15 +363,14 @@ class ALWAYS(STL):
                 all_constraints.append(constraint)
         elif isinstance(self.task, EVENTUALLY):
             eventually = self.task
-            if self.main.dimension == 1:
-                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2)).call()
-            elif self.main.dimension == 2:
-                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2, eventually.task.y1, eventually.task.y2)).call()
-            else:
-                constraints = EVENTUALLY(self.identifier, eventually.t1, eventually.t2, STAY(eventually.task.main, eventually.task.x1, eventually.task.x2, eventually.task.y1, eventually.task.y2, eventually.task.z1, eventually.task.z2)).call()
-            
-            for constraint in constraints:
-                all_constraints.append(constraint)
+            eventually_duration = eventually.task.t2 - eventually.task.t1
+            current_time = eventually.t1
+
+            while current_time < eventually.t2:
+                next_time = min(current_time + eventually_duration, eventually.t2)
+                all_constraints.append(EVENTUALLY(self.identifier, current_time, next_time, eventually.task).call())
+                current_time = next_time
+
         elif isinstance(self.task, ALWAYS) or isinstance(self.task, IMPLIES) or isinstance(self.task, UNTIL) or isinstance(self.task, NOT):
             print(self.task.__class__.__name__, "not handeled for ALWAYS")
         else:

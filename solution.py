@@ -50,8 +50,9 @@ from seq_reach_avoid_stay import *
 
 # # obj = OR(1, OR(1, EVENTUALLY(1, 0, 1, REACH(stl.main, 0, 1))))
 
-stl = STL(1, SeqReachAvoidStay(5, 1, 0.5, 1))
-obj = ALWAYS(1, 0, 10, EVENTUALLY(1, 0, 2, REACH(stl.main, 0, 1)))
+stl = STL(1, SeqReachAvoidStay(10, 1, 0.5, 1))
+obj = AND(1, ALWAYS(1, 0, 10, EVENTUALLY(1, 0, 2, REACH(stl.main, 0, 1))),
+            EVENTUALLY(1, 15, 16, REACH(stl.main, 15, 16)))
 
 obj.return_value = False
 obj.call()
