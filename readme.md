@@ -1,12 +1,16 @@
-# FOCAS Lab' STL-STT Engine
-#
-## Copyright (c) 2024 by FOCAS Lab, RBCCPS, IISc Blr.  All rights reserved.
-#
-### This version of the STL-STT library can be redistributed under CNRI's Python 1.6 license.  For any other use, please contact FOCAS Lab 
-# (subho02.dc@gmail.com.com).
-#
-# This engine has been developed by Subhodeep Choudhury, EEE Dept. BITS Pilani K. K. Birla Goa Campus.
+# STL_SpatiotemporalTubes_Toolbox (Developer's Branch)
+This toolbox follows a data-driven approach for generating Spatiotemporal Tubes. Signal Temporal Logic specification is collected from user and z3 solver is used to solve for the constraints for reach-avoid-stay maintaining robustness and safety of trajectory.
 
+## System Requirements
+* Python 3.8 or greater
+* Numpy, Matplotlib, PyTorch, Z3, Mpl_toolkits
+* Windows/MacOS/Linux
+
+## Start locally
+* Clone the repo into your system.
+* Download and install system requirements if you are missing any.
+
+## Executable inputs
 Structure:
 Enter - i. STL semantics
 
@@ -43,3 +47,7 @@ Multiagent:
              ii. Unique STL instance for each Bot
             iii.
 
+
+### Copyright (c) 2024 by FOCAS Lab, RBCCPS, IISc Blr.  All rights reserved.
+### This version of the STL-STT library can be redistributed under CNRI's Python 1.6 license.  For any other use, please contact FOCAS Lab (subho02.dc@gmail.com.com).
+### This engine has been developed by Subhodeep Choudhury, EEE Dept. BITS Pilani K. K. Birla Goa Campus.
