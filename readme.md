@@ -1,4 +1,4 @@
-# STL_SpatiotemporalTubes_Toolbox (Developer's Branch)
+# STL_STT_Toolbox (Developer's Branch)
 This toolbox follows a data-driven approach for generating Spatiotemporal Tubes. Signal Temporal Logic specification is collected from user and z3 solver is used to solve for the constraints for reach-avoid-stay maintaining robustness and safety of trajectory.
 
 ## System Requirements
