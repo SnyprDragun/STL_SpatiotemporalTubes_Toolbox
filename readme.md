@@ -53,7 +53,6 @@ Multiagent:
 
 ## Acknowledgement
 This work is supported by Robert Bosch Centre for Cyber Physical Systems, Indian Institue of Science.
-We would like to extend our special thanks of gratitude to Dr. Mohit P. Tahiliani for his valuable guidance throughout the course of this project
 
 ## Related Publication
 [S. Choudhury, R. Das, P. Jagtap, Data-driven Spatiotemporal Tubes to satisfy Signal Temporal Logic
