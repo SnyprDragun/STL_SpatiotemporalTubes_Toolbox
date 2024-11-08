@@ -46,8 +46,20 @@ Multiagent:
               i. Identifier must be mentioned for each STL instance
              ii. Unique STL instance for each Bot
             iii.
+## Contributors
+* [Subhodeep Choudhury](https://github.com/snyprdragun)
+* [Ratnangshu Das](https://github.com/RatnangshuD)
+* [Pushpak Jagtap](https://github.com/Pushpak-IISc)
 
+## Acknowledgement
+This work is supported by Robert Bosch Centre for Cyber Physical Systems, Indian Institue of Science.
+We would like to extend our special thanks of gratitude to Dr. Mohit P. Tahiliani for his valuable guidance throughout the course of this project
 
-### Copyright (c) 2024 by FOCAS Lab, RBCCPS, IISc Blr.  All rights reserved.
-### This version of the STL-STT library can be redistributed under CNRI's Python 1.6 license.  For any other use, please contact FOCAS Lab (subho02.dc@gmail.com.com).
-### This engine has been developed by Subhodeep Choudhury, EEE Dept. BITS Pilani K. K. Birla Goa Campus.
+## Related Publication
+[S. Choudhury, R. Das, P. Jagtap, Data-driven Spatiotemporal Tubes to satisfy Signal Temporal Logic
+Specifications for Unknown Systems]()
+
+## Copyright Declaration
+* Copyright (c) 2024 by FOCAS Lab, RBCCPS, IISc Blr.  All rights reserved.
+* This version of the STL-STT library can be redistributed under CNRI's Python 1.6 license.  For any other use, please contact FOCAS Lab
+----
