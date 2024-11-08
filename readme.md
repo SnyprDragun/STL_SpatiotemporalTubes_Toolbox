@@ -52,11 +52,14 @@ Multiagent:
 * [Pushpak Jagtap](https://github.com/Pushpak-IISc)
 
 ## Acknowledgement
-This work is supported by Robert Bosch Centre for Cyber Physical Systems, Indian Institue of Science.
+This work is supported by [Formal Control and Autonomous Systems (FOCAS) Lab](https://www.focaslab.com/) and [Robert Bosch Centre for Cyber Physical Systems, Indian Institue of Science, Bangalore](https://cps.iisc.ac.in/).
 
 ## Related Publication
 [S. Choudhury, R. Das, P. Jagtap, Data-driven Spatiotemporal Tubes to satisfy Signal Temporal Logic
 Specifications for Unknown Systems]()
+
+## Other Resources
+For implementing this paper in simulation/hardware along with controller deployment for real world systems, visit [this repo](https://github.com/SnyprDragun/STL_STT_examples). Both `cpp` and `python` implementations on Mechanum Omnibot and Quadcopter are illustrated.
 
 ## Copyright Declaration
 * Copyright (c) 2024 by FOCAS Lab, RBCCPS, IISc Blr.  All rights reserved.
