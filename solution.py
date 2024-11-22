@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 '''script to test STL specifications'''
-from solver import *
 from stl_main import *
 from action_classes import *
-from error_handling import *
 from seq_reach_avoid_stay import *
 
 # stl2 = STL(1, SeqReachAvoidStay(16, 2, 0.5, 1))
@@ -50,13 +48,28 @@ from seq_reach_avoid_stay import *
 
 # # obj = OR(1, OR(1, EVENTUALLY(1, 0, 1, REACH(stl.main, 0, 1))))
 
-stl = STL(1, SeqReachAvoidStay(10, 1, 0.5, 1))
-obj = AND(1, ALWAYS(1, 0, 10, EVENTUALLY(1, 0, 2, REACH(stl.main, 0, 1))),
-            EVENTUALLY(1, 15, 16, REACH(stl.main, 15, 16)))
+# stl = STL(1, SeqReachAvoidStay(10, 1, 0.5, 1))
+# obj = AND(1, ALWAYS(1, 0, 10, EVENTUALLY(1, 0, 2, REACH(stl.main, 0, 1))),
+#             EVENTUALLY(1, 15, 16, REACH(stl.main, 15, 16)))
 
+# obj.return_value = False
+# obj.call()
+# stl.plotter()
+
+
+#------ ALWAYS EVENTUALLY CASE (SLOWER) -----#
+stl = STL(1, SeqReachAvoidStay(16, 2, 0.001, 0.2))
+obj = AND(1, EVENTUALLY(1, 0, 5, REACH(stl.main, 0, 0.2, 0, 0.2)), 
+            EVENTUALLY(1, 15, 20, REACH(stl.main, 2, 1.8, 1, 1.2)),
+            EVENTUALLY(1, 30, 35, REACH(stl.main, 1, 1.2, 1.8, 2)),
+            EVENTUALLY(1, 45, 50, REACH(stl.main, 2, 1.8, 1, 1.2)),
+            EVENTUALLY(1, 60, 65, REACH(stl.main, 1, 1.2, 1.8, 2)),
+            EVENTUALLY(1, 75, 80, REACH(stl.main, 2.3, 2.5, 2.3, 2.5))
+        )
 obj.return_value = False
 obj.call()
 stl.plotter()
+#--------------------------------------------#
 
 
 
