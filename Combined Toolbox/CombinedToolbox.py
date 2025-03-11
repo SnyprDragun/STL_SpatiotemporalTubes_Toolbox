@@ -23,6 +23,8 @@ class SeqReachAvoidStay():
         self._x_finish = 0
         self._y_start = 0
         self._y_finish = 0
+        self._z_start = 0
+        self._z_finish = 0
         self.tube_thickness = tube_thickness
         self.lambda_values = np.arange(0, 1.1, 0.1)
         self.degree = degree
@@ -442,7 +444,7 @@ class SeqReachAvoidStay():
             Coeffs = []
             C_fin = np.zeros((2 * self.dimension) * (self.degree + 1))
             for i in range(len(self.C)):
-                xi[i] = (np.float128(model[self.C[i]].numerator().as_long()))/(np.float128(model[self.C[i]].denominator().as_long()))
+                xi[i] = (np.float64(model[self.C[i]].numerator().as_long()))/(np.float64(model[self.C[i]].denominator().as_long()))
                 print("{} = {}".format(self.C[i], xi[i]))
                 Coeffs.append(xi[i])
 
@@ -560,7 +562,6 @@ class SeqReachAvoidStay():
         all_points = self.setpoints + self.obstacles
         x1, x2, y1, y2, z1, z2, t1, t2 = [], [], [], [], [], [], [], []
         for i in all_points:
-            tab = 0
             if self.dimension == 1:
                 x1.append(i[0])
                 x2.append(i[1])
@@ -1645,7 +1646,8 @@ class OR(STL):
                     print("Other instance: ", self.instances)
 
         self.all_or_targets = self.reach_or_targets + self.avoid_or_targets + self.stay_or_targets
-        self.goal = [3, 4]
+        # self.goal = [3, 4]
+        self.goal = [12, 15, 12, 15, 12, 15]
 
     def add_resultant(self):
         for instance in self.instances:
@@ -1671,6 +1673,7 @@ class OR(STL):
                 else:
                     raise ValueError("No options in 'OR' block!")
                 
+                print("Here", all_constraints)
                 for constraint in all_constraints:
                     self.main.solver.add(constraint)
 
@@ -2015,3 +2018,28 @@ class IMPLIES(STL):
         else:
             for i in implies_constraint:
                 self.main.solver.add(i)
+
+
+# stl_obj_1 = STL(1, SeqReachAvoidStay(4, 1, 0.05, 1))
+# obj = AND(1, EVENTUALLY(1, 0, 1, REACH(stl_obj_1.main, 0, 1)),
+#             EVENTUALLY(1, 4, 5, REACH(stl_obj_1.main, 4, 5)))
+
+stl_obj_2 = STL(1, SeqReachAvoidStay(5, 3, 0.05, 3))
+obj = AND(1, EVENTUALLY(1, 0, 1, REACH(stl_obj_2.main, -1, 2, -1, 2, 1, 4)), 
+            EVENTUALLY(1, 14, 15, REACH(stl_obj_2.main, 12, 15, 12, 15, 12, 15)),
+            # OR(1, 
+            EVENTUALLY(1, 7, 8, REACH(stl_obj_2.main, 9, 12, 6, 9, 6, 9))#, 
+            #         EVENTUALLY(1, 7, 8, REACH(stl_obj_2.main, 3, 6, 6, 9, 6, 9))
+            #     ),
+            # ALWAYS(1, 0, 15, AVOID(stl_obj_2.main, 6, 9, 6, 11, 0, 15)),
+        )
+
+obj.return_value = False
+obj.call()
+stl_obj_2.plotter()
+
+
+###
+# Check minimum tube thickness hard coded
+# Check set goal for OR case and its order
+# Try changing float class if zero solution
